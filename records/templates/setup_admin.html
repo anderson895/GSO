@@ -1,0 +1,439 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Head Supervisor Setup - Waste Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(rgba(255,255,255,0.18), rgba(255,255,255,0.18)),
+            url("{% static 'images/background.png' %}") no-repeat center center fixed;
+            background-size: cover;
+            color: #2c3e50;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(39, 174, 96, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float-blob 7s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -100px;
+            left: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(52, 152, 219, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float-blob-reverse 8s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes float-blob {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
+        @keyframes float-blob-reverse {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-30px, 30px); }
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 480px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-emblem {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: slide-down 0.6s ease;
+        }
+
+        @keyframes slide-down {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .emblem {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 20px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 15px 40px rgba(189, 0, 0, 0.12);
+            border: 3px solid #f5f5f5;
+        }
+
+        .emblem::before {
+            content: '🌍';
+            font-size: 48px;
+            filter: grayscale(0%);
+            opacity: 1;
+        }
+
+        .emblem::after {
+            content: '';
+            position: absolute;
+            width: 110%;
+            height: 110%;
+            border: 2px solid #27ae60;
+            border-radius: 50%;
+            opacity: 0;
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.95);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.3);
+                opacity: 0;
+            }
+        }
+
+        .portal-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .portal-subtitle {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .connection-line {
+            height: 2px;
+            max-width: 100px;
+            background: linear-gradient(to right, transparent, #27ae60, #3498db, transparent);
+            margin: 16px auto;
+            border-radius: 1px;
+            animation: expand 1.5s ease-out;
+        }
+
+        @keyframes expand {
+            from {
+                width: 0;
+                opacity: 0;
+            }
+            to {
+                width: 100px;
+                opacity: 1;
+            }
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 1px solid rgba(240, 240, 240, 0.7);
+            animation: slide-up 0.6s ease;
+        }
+
+        @keyframes slide-up {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-wrapper {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group:last-of-type {
+            margin-bottom: 32px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            background: linear-gradient(135deg, #27ae60, #3498db);
+            border-radius: 50%;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #f0f0f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #2c3e50;
+            transition: all 0.3s ease;
+            background-color: #fafbfc;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #27ae60;
+            background-color: white;
+            box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.12);
+        }
+
+        .message-box {
+            background: linear-gradient(135deg, #ecf6f1 0%, #f0f8f5 100%);
+            border-left: 4px solid #27ae60;
+            color: #186a3b;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            animation: shake-alert 0.3s ease;
+        }
+
+        @keyframes shake-alert {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(39, 174, 96, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button[type="submit"]::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(39, 174, 96, 0.35);
+        }
+
+        button[type="submit"]:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        button[type="submit"]:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #f0f0f0, transparent);
+            margin: 32px 0;
+        }
+
+        .auth-link {
+            text-align: center;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .auth-link a {
+            color: #27ae60;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline;
+            position: relative;
+        }
+
+        .auth-link a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #27ae60;
+            transition: width 0.3s ease;
+        }
+
+        .auth-link a:hover::after {
+            width: 100%;
+        }
+
+        @media (max-width: 480px) {
+            .login-wrapper { max-width: 100%; }
+            .portal-title { font-size: 24px; }
+            .form-wrapper { padding: 28px 20px; }
+            .emblem { width: 75px; height: 75px; }
+            .emblem::before { font-size: 40px; }
+            .login-container { border-radius: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="hero-emblem">
+            <div class="emblem"></div>
+            <h1 class="portal-title">Head Supervisor Setup</h1>
+            <p class="portal-subtitle">Initial System Configuration</p>
+            <div class="connection-line"></div>
+        </div>
+
+        <div class="login-container">
+            <div class="form-wrapper">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="message-box">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label>Setup Key</label>
+                        <input type="text" name="setup_key" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Employee ID</label>
+                        <input type="text" name="employee_id" id="employee_id" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Generated Username</label>
+                        <input type="text" id="username" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" name="confirm_password" required>
+                    </div>
+
+                    <button type="submit">
+                        Create Head Supervisor
+                    </button>
+                </form>
+
+                <div class="divider"></div>
+
+                <div class="auth-link">
+                    This page is only available when no Head Supervisor account exists.
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+<script>
+
+const employeeIdField =
+    document.getElementById('employee_id');
+
+const usernameField =
+    document.getElementById('username');
+
+function generateAdminUsername() {
+
+    const employeeId =
+        employeeIdField.value;
+
+    const lastFour =
+        employeeId.slice(-4);
+
+    usernameField.value =
+        'HSV-' + lastFour;
+}
+
+employeeIdField.addEventListener(
+    'input',
+    generateAdminUsername
+);
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Circular background -->
+  <circle cx="50" cy="50" r="48" fill="#D4A574" stroke="#8B6F47" stroke-width="2"/>
+  
+  <!-- Inner circle -->
+  <circle cx="50" cy="50" r="42" fill="#E8C7A0" stroke="#D4A574" stroke-width="1.5"/>
+  
+  <!-- Gear teeth (outer ring) -->
+  <g fill="#8B6F47" opacity="0.7">
+    <rect x="45" y="5" width="10" height="8" rx="2"/>
+    <rect x="45" y="87" width="10" height="8" rx="2"/>
+    <rect x="5" y="45" width="8" height="10" rx="2"/>
+    <rect x="87" y="45" width="8" height="10" rx="2"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="50" y="48" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#8B6F47">BS</text>
+  <text x="50" y="68" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#8B6F47">BSU</text>
+  
+  <!-- Year -->
+  <text x="50" y="88" font-family="Arial, sans-serif" font-size="7" text-anchor="middle" fill="#8B6F47">1904</text>
+</svg>

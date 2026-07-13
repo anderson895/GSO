@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Settings | BSU Waste</title>
+    <style>
+        :root {
+            --bg: #e9f7ef;
+            --sidebar: #0f3d24;
+            --panel: #ffffff;
+            --primary: #14984f;
+            --text: #102a43;
+            --muted: #4b5563;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow: 0 25px 50px rgba(15, 23, 42, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at top left, rgba(20, 152, 79, 0.22), transparent 35%),
+                        linear-gradient(180deg, #f8faf8 0%, #e9f7ef 100%);
+            color: var(--text);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+        .layout.sidebar-hidden { grid-template-columns: 0 1fr; }
+        .layout.sidebar-hidden .sidebar { width: 0; padding: 0; overflow: hidden; }
+        .layout.sidebar-hidden .sidebar * { display: none !important; }
+
+        .sidebar {
+            background: var(--sidebar);
+            color: #d1fae5;
+            padding: 32px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand span {
+            width: 36px;
+            height: 36px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.12);
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+        }
+
+        .sidebar p {
+            color: #bbf7d0;
+            line-height: 1.8;
+        }
+
+        .section-title {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.18em;
+            color: #86efac;
+        }
+
+        .nav-links {
+            display: grid;
+            gap: 10px;
+        }
+
+        .nav-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-radius: 16px;
+            text-decoration: none;
+            color: #d1fae5;
+            transition: background 0.2s ease, transform 0.2s ease;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateX(2px);
+        }
+
+        .nav-links form {
+            display: contents;
+        }
+
+        .nav-links button {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: none;
+            background: rgba(255, 255, 255, 0.04);
+            color: #d1fae5;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .nav-links button:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateX(2px);
+        }
+        .logout-btn { width: 100%; padding: 14px 16px; border-radius: 16px; border: none; background: rgba(255, 255, 255, 0.04); color: #d1fae5; cursor: pointer; font-family: inherit; text-align: left; transition: background 0.2s ease, transform 0.2s ease; }
+        .logout-btn:hover { background: rgba(255, 255, 255, 0.12); transform: translateX(2px); }
+
+        .main {
+            padding: 28px 32px;
+        }
+
+        .topbar {
+            margin-bottom: 28px;
+        }
+
+        .topbar h1 {
+            margin: 0 0 12px;
+            font-size: 2rem;
+        }
+
+        .topbar p {
+            color: var(--muted);
+            margin: 0;
+        }
+
+        .profile-panel {
+            background: var(--panel);
+            border-radius: 28px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(16, 185, 129, 0.12);
+            max-width: 600px;
+        }
+
+        .profile-info {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.12);
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .info-label {
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.04em;
+        }
+
+        .info-value {
+            color: var(--text);
+        }
+
+        .role-badge {
+            display: inline-flex;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(20, 152, 79, 0.12);
+            color: var(--success);
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: capitalize;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text);
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.04em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid rgba(16, 185, 129, 0.18);
+            border-radius: 18px;
+            font-size: 1rem;
+            font-family: inherit;
+            color: var(--text);
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(20, 152, 79, 0.04);
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 32px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 170px;
+            padding: 16px 26px;
+            border: none;
+            border-radius: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            text-transform: uppercase;
+            font-size: 0.95rem;
+            letter-spacing: 0.08em;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.1);
+            transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 32px rgba(15, 23, 42, 0.14);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #16a34a 0%, #0f6828 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f8faf8;
+            color: var(--text);
+            border: 1px solid rgba(16, 185, 129, 0.18);
+        }
+
+        .btn-secondary:hover {
+            background: #eef4ef;
+        }
+
+        .messages {
+            margin-bottom: 24px;
+        }
+
+        .message {
+            padding: 14px 16px;
+            border-radius: 18px;
+            margin-bottom: 12px;
+        }
+
+        .message.success {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .message.error {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        @media (max-width: 860px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                width: auto;
+                height: auto;
+                top: auto;
+                padding: 24px 18px;
+            }
+
+            .main {
+                padding: 20px 16px;
+            }
+
+            .profile-panel {
+                max-width: 100%;
+            }
+
+            .info-row {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+        .sidebar-collapse {
+            margin-left: auto;
+            border: none;
+            background: transparent;
+            color: inherit;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+        .sidebar-collapse:hover { background: rgba(255, 255, 255, 0.1); }
+        .layout.sidebar-collapsed { grid-template-columns: 84px 1fr; }
+        .layout.sidebar-collapsed .sidebar { width: 84px; min-width: 84px; padding: 32px 12px; }
+        .layout.sidebar-collapsed .sidebar .brand { justify-content: center; }
+        .layout.sidebar-collapsed .sidebar .brand .brand-name { display: none; }
+        .layout.sidebar-collapsed .sidebar p,
+        .layout.sidebar-collapsed .sidebar .section-title,
+        .layout.sidebar-collapsed .sidebar .nav-links,
+        .layout.sidebar-collapsed .sidebar form,
+        .layout.sidebar-collapsed .sidebar .logout-btn { display: none !important; }
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 18px;
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 14px;
+            background: rgba(15, 61, 36, 0.96);
+            color: #d1fae5;
+            cursor: pointer;
+            place-items: center;
+            z-index: 60;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
+        }
+        .mobile-menu-btn.hidden {
+            display: none !important;
+        }
+        .mobile-menu-btn:hover { background: rgba(20, 152, 79, 0.96); }
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            z-index: 45;
+        }
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        @media (max-width: 900px) {
+            .mobile-menu-btn { display: grid; }
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; transform: translateX(-100%); padding: 24px 18px; z-index: 55; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25); will-change: transform; }
+            .layout.sidebar-mobile-open .sidebar { transform: translateX(0); }
+            .layout.sidebar-mobile-open .mobile-menu-btn { display: none !important; }
+            .sidebar-collapse { display: inline-flex; }
+            .layout.sidebar-collapsed { grid-template-columns: 1fr; }
+            .layout.sidebar-collapsed .sidebar { width: 280px; min-width: auto; padding: 24px 18px; }
+            .layout.sidebar-mobile-open { overflow: hidden; }
+        }
+</style>
+</head>
+<body>
+    <button type="button" class="mobile-menu-btn" aria-label="Open menu">☰</button>
+    <div class="sidebar-overlay"></div>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="brand"><span>BS</span><span class="brand-name">BSU Waste</span><button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button></div>
+            <p>Manage your profile and security settings.</p>
+            <div class="section-title">Main Menu</div>
+
+            <div class="nav-links">
+
+                {% if request.user.profile.role == 'Head Supervisor' %}
+                <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+                <a href="{% url 'user_list' %}">User Management</a>
+                <a href="{% url 'area_list' %}">Area Management</a>
+                <a href="{% url 'admin_reports' %}">Reports Summary</a>
+                <a href="{% url 'threshold_settings' %}">Threshold Settings</a>
+                <a href="{% url 'response_guidelines' %}">Response Guidelines</a>
+
+                {% else %} <a href="{% url 'waste_list' %}">Dashboard</a>
+
+                {% endif %}
+                {% if request.user.profile.role == 'Coordinator' %}
+                <a href="{% url 'waste_graphs' %}">Analytics</a>
+                <a href="{% url 'building_status' %}">Area Monitoring</a>
+                <a href="{% url 'generate_report' %}">Report</a>
+                {% endif %}
+                
+            </div>
+            <div class="section-title">Account</div>
+            <div class="nav-links">
+                <a href="{% url 'edit_profile' %}" class="active">Profile Settings</a>
+            </div>
+            <form action="{% url 'logout' %}" method="POST" style="width: 100%;">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">Logout</button>
+            </form>
+        </aside>
+        <main class="main">
+            <div class="topbar">
+                <h1>Profile Settings</h1>
+                <p>Update your account information and change your password.</p>
+            </div>
+
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="profile-panel">
+                <div class="profile-info">
+                    <h2>Your Information</h2>
+                    <div class="info-row">
+                        <span class="info-label">Employee ID</span>
+                        <span class="info-value">{{ profile.employee_id }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Role</span>
+                        <span class="role-badge">{{ profile.role }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Username</span>
+                        <span class="info-value">{{ user.username }}</span>
+                    </div>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <h2>Security</h2>
+                    <div class="form-group">
+                        <label for="new_password">New Password</label>
+                        <input type="password" id="new_password" name="new_password" placeholder="Leave blank to keep current password">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm your new password">
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        {% if request.user.profile.role == 'Head Supervisor' %}
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        {% else %}
+                        <a href="{% url 'waste_list' %}" class="btn btn-secondary">Cancel</a>
+                        {% endif %}
+                    </div>
+
+                    {% if request.user.profile.role == 'Head Supervisor' %}
+
+                    <hr style="margin:40px 0; border:none; border-top:1px solid #e5e7eb;">
+
+                    <h2 style="color:#dc2626;">Danger Zone</h2>
+
+                    <p style="color:#6b7280; margin-bottom:18px;">
+                        Permanently delete the Head Supervisor account.
+                        Once deleted, the system will return to the Setup Head Supervisor page so that a new Head Supervisor can be created.
+                    </p>
+
+                    <button
+                        type="submit"
+                        name="delete_account"
+                        value="yes"
+                        class="btn"
+                        style="background:#dc2626; color:white;"
+                        onclick="
+                            return confirm(
+                                'WARNING:\n\nDeleting the Head Supervisor account will permanently remove your access to the system.\n\nAfter deletion, the system will return to the Setup Head Supervisor page so a new Head Supervisor can be created.\n\nAre you sure you want to continue?'
+                            );
+                        ">
+                        Delete Account
+                    </button>
+
+                    {% endif %}
+
+                </form>
+            </div>
+
+            {% if request.user.profile.role == 'Head Supervisor' %}
+            <a href="{% url 'admin_dashboard' %}" class="back-link">
+                ← Back to Dashboard
+            </a>
+            {% else %}
+            <a href="{% url 'waste_list' %}" class="back-link">
+                ← Back to Dashboard
+            </a>
+            {% endif %}
+        </main>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var layout = document.querySelector('.layout');
+            var overlay = document.querySelector('.sidebar-overlay');
+            var menuButton = document.querySelector('.mobile-menu-btn');
+            var collapseButton = document.querySelector('.sidebar-collapse');
+
+            if (menuButton && layout) {
+                menuButton.addEventListener('click', function() {
+                    layout.classList.add('sidebar-mobile-open');
+                    overlay.classList.add('active');
+                    menuButton.classList.add('hidden');
+                });
+            }
+
+            if (overlay && layout) {
+                overlay.addEventListener('click', function() {
+                    layout.classList.remove('sidebar-mobile-open');
+                    overlay.classList.remove('active');
+                    menuButton.classList.remove('hidden');
+                });
+            }
+
+            if (collapseButton && layout) {
+                collapseButton.addEventListener('click', function() {
+                    if (layout.classList.contains('sidebar-mobile-open')) {
+                        layout.classList.remove('sidebar-mobile-open');
+                        overlay.classList.remove('active');
+                        menuButton.classList.remove('hidden');
+                    } else {
+                        layout.classList.toggle('sidebar-collapsed');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

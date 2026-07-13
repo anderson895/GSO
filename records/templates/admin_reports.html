@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Summary of Reports</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <style>
+            :root {
+                --bg: #e9f7ef;
+                --sidebar: #0f3d24;
+                --sidebar-soft: #143d2e;
+                --panel: #ffffff;
+                --primary: #14984f;
+                --text: #0f172a;
+                --muted: #4b5563;
+                --shadow: 0 25px 45px rgba(15, 23, 42, 0.08);
+            }
+
+            * { box-sizing: border-box; }
+            body {
+                margin: 0;
+                font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                color: var(--text);
+                background: linear-gradient(180deg, #f7fbf8 0%, #e9f7ef 100%);
+            }
+
+            .layout { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+            .layout.sidebar-hidden { grid-template-columns: 0 1fr; }
+            .layout.sidebar-hidden .sidebar { width: 0; padding: 0; overflow: hidden; }
+            .layout.sidebar-hidden .sidebar * { display: none !important; }
+            .sidebar { padding: 32px 24px; background: var(--sidebar); color: #d1fae5; display: flex; flex-direction: column; gap: 28px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+            .brand { font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 12px; }
+            .brand span { width: 36px; height: 36px; border-radius: 14px; background: rgba(255, 255, 255, 0.12); display: grid; place-items: center; font-weight: 700; }
+            .sidebar p { color: #a7f3d0; line-height: 1.8; margin-bottom: 8px; }
+            .section-title { color: #86efac; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.18em; }
+            .nav-links { display: grid; gap: 10px; }
+            .nav-links a { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; border-radius: 16px; text-decoration: none; color: #d1fae5; background: rgba(255, 255, 255, 0.08); transition: transform 0.2s ease, background 0.2s ease; }
+            .nav-links a:hover, .nav-links a.active { background: rgba(255, 255, 255, 0.12); transform: translateX(2px); }
+
+            .main { padding: 28px 32px; }
+            .topbar { display: flex; justify-content: space-between; gap: 18px; align-items: center; margin-bottom: 26px; }
+            .topbar h1 { margin: 0; font-size: 2rem; }
+            .topbar .profile { display: inline-flex; align-items: center; gap: 12px; background: var(--panel); padding: 14px 18px; border-radius: 20px; box-shadow: var(--shadow); }
+            .topbar .profile img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+            .topbar-actions { display: flex; justify-content: flex-end; margin-bottom: 18px; }
+            .profile-btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 22px; border-radius: 20px; background: var(--primary); color: white; text-decoration: none; font-weight: 700; box-shadow: var(--shadow); transition: transform 0.2s ease, background 0.2s ease; }
+            .profile-btn:hover { transform: translateY(-1px); background: #0d7b3b; }
+
+            .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 28px; }
+            .card { background: var(--panel); border-radius: 24px; padding: 24px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
+            .card h3 { margin: 0 0 8px; font-size: 0.95rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
+            .card .value { margin: 0; font-size: 2rem; color: var(--text); }
+            .card .note { margin-top: 10px; color: var(--muted); line-height: 1.7; }
+
+            .change-card { background: var(--panel); border-radius: 24px; padding: 24px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); display: block; }
+            .change-content h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
+            .change-content .percentage { margin: 0; font-size: 1.8rem; font-weight: 700; }
+            .change-content .percentage.increased { color: #4f46e5; }
+            .change-content .percentage.decreased { color: #ef4444; }
+            .change-content .status { margin-top: 8px; font-size: 0.95rem; color: var(--muted); }
+
+            .panel { background: var(--panel); border-radius: 28px; padding: 28px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
+            #adminChart {height: 400px !important;}
+            .panel-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 22px; }
+            .panel-header h2 { margin: 0; font-size: 1.2rem; }
+            .badge { padding: 10px 14px; border-radius: 999px; background: #d1fae5; color: #0f172a; font-weight: 700; font-size: 0.86rem; }
+
+            .form-card { background: #f7fbf6; border-radius: 24px; padding: 28px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
+            .form-card form { display: grid; gap: 18px; }
+            .form-card input, .form-card select { width: 100%; padding: 14px 16px; border-radius: 14px; border: 1px solid #d1d5db; background: #ffffff; }
+            .form-card button { width: fit-content; }
+
+            .table-wrapper { overflow-x: auto; }
+            table { width: 100%; border-collapse: collapse; min-width: 780px; }
+            th, td { padding: 16px 18px; text-align: left; border-bottom: 1px solid rgba(15, 23, 42, 0.08); }
+            th { color: var(--muted); font-size: 0.95rem; }
+            tr:hover { background: #f7fbf6; }
+
+            .status-pill { display: inline-block; padding: 8px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
+            .status-low { background-color: #16a34a !important; color: white !important; }
+            .status-moderate { background-color: #fbbf24 !important; color: #0f172a !important; }
+            .status-high { background-color: #f87171 !important; color: white !important; }
+            .status-critical { background-color: #991b1b !important; color: white !important; }
+
+            .action-links a { display: inline-block; margin-right: 10px; color: var(--primary); font-weight: 700; text-decoration: none; }
+            .logout-btn { width: 100%; padding: 14px 16px; border-radius: 16px; border: none; background: rgba(255, 255, 255, 0.04); color: #d1fae5; cursor: pointer; font-family: inherit; text-align: left; transition: background 0.2s ease, transform 0.2s ease; }
+            .logout-btn:hover { background: rgba(255, 255, 255, 0.12); transform: translateX(2px); }
+            .add-btn { border: none; border-radius: 999px; padding: 12px 20px; font-weight: 700; cursor: pointer; background: var(--primary); color: white; transition: transform 0.2s ease, background 0.2s ease; }
+            .add-btn:hover { transform: translateY(-1px); }
+
+            .container { display: grid; gap: 24px; padding-bottom: 28px; }
+            .post-card { background: var(--panel); border-radius: 28px; padding: 24px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
+            .post-card img { width: 100%; max-height: 320px; object-fit: cover; border-radius: 20px; margin-bottom: 16px; }
+            .post-meta { display: flex; flex-wrap: wrap; gap: 10px; color: var(--muted); font-size: 0.95rem; }
+            .post-meta span { background: #f0fdf4; padding: 8px 12px; border-radius: 999px; }
+
+            @media (max-width: 1060px) { 
+                .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+                .change-card { flex-direction: column; }
+                .change-icon { width: 60px; height: 60px; }
+            }
+
+            .mobile-report-list{
+                    display:none;
+                }
+
+                .mobile-report-card{
+                    background:white;
+                    border-radius:20px;
+                    padding:18px;
+                    margin-bottom:18px;
+                    border:1px solid rgba(15,23,42,.08);
+                    box-shadow:var(--shadow);
+                }
+
+                .mobile-report-grid{
+                    display:grid;
+                    grid-template-columns:1fr 1fr;
+                    gap:18px;
+                }
+
+                .mobile-report-grid .label{
+                    display:block;
+                    font-size:.75rem;
+                    font-weight:700;
+                    color:var(--muted);
+                    text-transform:uppercase;
+                    letter-spacing:.05em;
+                    margin-bottom:6px;
+                }
+
+                .mobile-report-grid p{
+                    margin:0;
+                }
+
+                .mobile-report-grid .remarks{
+                    grid-column:1 / -1;
+                }
+
+            @media (max-width: 860px) {
+                .layout { grid-template-columns: 1fr; }
+                .sidebar { position: relative; width: auto; height: auto; top: auto; padding: 24px 18px; }
+                .main { padding: 20px 16px; }
+                .topbar { flex-direction: column; align-items: flex-start; gap: 16px; }
+                .topbar .profile { width: 100%; justify-content: space-between; }
+                .cards { grid-template-columns: 1fr; }
+                .table-wrapper { overflow-x: auto; }
+                .table-wrapper table { width: 100%; min-width: auto; border-spacing: 0; }
+                .table-wrapper thead { display: none; }
+                .table-wrapper tbody tr {
+                    display: block;
+                    margin-bottom: 18px;
+                    border: 1px solid rgba(15, 23, 42, 0.08);
+                    border-radius: 20px;
+                    background: white;
+                    box-shadow: none;
+                }
+                .table-wrapper tbody tr td {
+                    display: block;
+                    padding: 12px 16px;
+                    border-bottom: none;
+                }
+                .table-wrapper tbody tr td::before{
+                    display:block;
+                    font-size:.75rem;
+                    font-weight:700;
+                    color:#6b7280;
+                    margin-bottom:4px;
+                    text-transform:uppercase;
+                    letter-spacing:.05em;
+                }
+                .table-wrapper tbody tr td:last-child { border-bottom: none; }
+                .table-wrapper tbody tr td::before {
+                    content: attr(data-label);
+                    flex: 0 0 34%;
+                    font-weight: 700;
+                    color: var(--muted);
+                    margin-right: 12px;
+                }
+                .table-wrapper tbody tr td .status-pill { margin-left: auto; }
+                .form-card form { gap: 16px; }
+                .panel-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+                .panel-header h2 { margin-bottom: 0; }
+                .card, .panel, .form-card { padding: 20px; }
+                .profile-btn { width: 100%; }
+                .nav-links { gap: 10px; }
+                .nav-links a { padding: 12px 14px; }
+                .table-wrapper{
+                    display:none;
+                }
+
+                .mobile-report-list{
+                    display:block;
+                }
+            }
+                .mobile-menu-btn {
+                display: none;
+                position: fixed;
+                top: 20px;
+                left: 18px;
+                width: 44px;
+                height: 44px;
+                border: none;
+                border-radius: 14px;
+                background: rgba(15, 61, 36, 0.96);
+                color: #d1fae5;
+                cursor: pointer;
+                place-items: center;
+                z-index: 60;
+                box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
+            }
+            .mobile-menu-btn:hover { background: rgba(20, 152, 79, 0.96); }
+            .mobile-menu-btn.hidden { display: none !important; }
+            .sidebar-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.25s ease, visibility 0.25s ease;
+                z-index: 45;
+            }
+
+            .sidebar-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .sidebar-collapse {
+                margin-left: auto;
+                border: none;
+                background: transparent;
+                color: inherit;
+                font-size: 1.2rem;
+                cursor: pointer;
+                padding: 6px;
+                border-radius: 10px;
+                transition: background 0.2s ease;
+            }
+            .sidebar-collapse:hover { background: rgba(255, 255, 255, 0.1); }
+            .layout.sidebar-collapsed { grid-template-columns: 84px 1fr; }
+            .layout.sidebar-collapsed .sidebar { width: 84px; min-width: 84px; padding: 32px 12px; }
+            .layout.sidebar-collapsed .sidebar .brand { justify-content: center; }
+            .layout.sidebar-collapsed .sidebar .brand .brand-name { display: none; }
+            .layout.sidebar-collapsed .sidebar p,
+            .layout.sidebar-collapsed .sidebar .section-title,
+            .layout.sidebar-collapsed .sidebar .nav-links,
+            .layout.sidebar-collapsed .sidebar form,
+            .layout.sidebar-collapsed .sidebar .logout-btn { display: none !important; }
+            @media (max-width: 900px) {
+                .mobile-menu-btn { display: grid; }
+                .layout { grid-template-columns: 1fr; }
+                .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; transform: translateX(-100%); padding: 24px 18px; z-index: 50; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25); }
+                .layout.sidebar-mobile-open .sidebar { transform: translateX(0); }
+                .layout.sidebar-mobile-open .sidebar-overlay { opacity: 1; visibility: visible; }
+                .layout.sidebar-mobile-open .mobile-menu-btn { display: none; }
+                .sidebar-collapse { display: inline-flex; }
+                .layout.sidebar-collapsed { grid-template-columns: 1fr; }
+                .layout.sidebar-collapsed .sidebar { width: 280px; min-width: auto; padding: 24px 18px; }
+                .topbar h1{ padding-left:60px;}
+            }
+    </style>
+
+</head>
+
+<body>
+    <button type="button" class="mobile-menu-btn" aria-label="Open menu">☰</button>
+    <div class="sidebar-overlay"></div>
+
+    <div class="layout">
+
+        <aside class="sidebar">
+
+            <div class="brand">
+                <span>BS</span>
+                <span class="brand-name">BSU Waste Monitoring</span>
+                <button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button>
+            </div>
+
+            <p>Manage users, areas, reports, thresholds, and system settings.</p>
+
+            <div class="section-title">Main Menu</div>
+
+            <div class="nav-links">
+                <a href="{% url 'admin_dashboard' %}" class="active">Dashboard</a>
+                <a href="{% url 'user_list' %}">User Management</a>
+                <a href="{% url 'area_list' %}">Area Management</a>
+                <a href="{% url 'admin_reports' %}">Reports Summary</a>
+                <a href="{% url 'threshold_settings' %}">Threshold Settings</a>
+                <a href="{% url 'response_guidelines' %}">Response Guidelines</a>
+            </div>
+
+            <div class="section-title">Account</div>
+
+            <div class="nav-links">
+                <a href="{% url 'edit_profile' %}">
+                    Profile Settings
+                </a>
+            </div>
+
+            <form action="{% url 'logout' %}" method="POST" style="width:100%;">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">
+                    Logout
+                </button>
+            </form>
+
+        </aside>
+
+        <main class="main">
+
+            <div class="topbar">
+                <div>
+                    <h1>Summary of Reports</h1>
+                    <p>Generate monthly and yearly waste reports.</p>
+                </div>
+            </div>
+
+            <div class="panel">
+
+                <div class="panel-header">
+                    <h2>Report Filters</h2>
+                </div>
+
+                {% if error %}
+                <div style="
+                    background:#fee2e2;
+                    color:#b91c1c;
+                    padding:14px;
+                    border-radius:14px;
+                    margin-bottom:20px;">
+                    {{ error }}
+                </div>
+                {% endif %}
+
+                <div class="form-card">
+
+                    <form method="GET">
+                        <p>
+                            <label><strong>Report Type</strong></label>
+
+                            <select name="report_type" id="report_type">
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </p>
+
+                        <p id="month_container">
+                            <label><strong>Month</strong></label>
+
+                            <select name="month">
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </p>
+
+                        <p>
+                            <label><strong>Year</strong></label>
+
+                            <input type="number"
+                                name="year"
+                                value="{{ request.GET.year }}">
+                        </p>
+
+                        <button type="submit" class="add-btn">
+                            Generate Report
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+            <div class="panel" style="margin-top:24px;">
+
+                <div class="panel-header">
+                    <h2>Report Preview</h2>
+
+                    {% if records %}
+                    <a href="{% url 'export_csv' %}?report_type={{ request.GET.report_type }}&month={{ request.GET.month }}&year={{ request.GET.year }}"
+                    class="profile-btn">
+                        Export CSV
+                    </a>
+                    {% endif %}
+                </div>
+
+                {% if records %}
+
+                <div class="mobile-report-list">
+
+                    {% for record in records %}
+
+                    <div class="mobile-report-card">
+
+                        <div class="mobile-report-grid">
+
+                            <div>
+                                <span class="label">Area</span>
+                                <p>{{ record.area }}</p>
+                            </div>
+
+                            <div>
+                                <span class="label">Waste Type</span>
+                                <p>{{ record.waste_type }}</p>
+                            </div>
+
+                            <div>
+                                <span class="label">Amount</span>
+                                <p>{{ record.amount }}</p>
+                            </div>
+
+                            <div>
+                                <span class="label">Alert Level</span>
+
+                                <span class="status-pill
+                                    {% if record.alert_level == 'Low' %}
+                                        status-low
+                                    {% elif record.alert_level == 'Moderate' %}
+                                        status-moderate
+                                    {% elif record.alert_level == 'High' %}
+                                        status-high
+                                    {% elif record.alert_level == 'Critical' %}
+                                        status-critical
+                                    {% endif %}
+                                ">
+                                    {{ record.alert_level }}
+                                </span>
+
+                            </div>
+
+                            <div>
+                                <span class="label">Janitor</span>
+                                <p>{{ record.user.username }}</p>
+                            </div>
+
+                            <div>
+                                <span class="label">Date</span>
+                                <p>{{ record.date }}</p>
+                            </div>
+
+                            <div>
+                                <span class="label">Time</span>
+                                <p>{{ record.time }}</p>
+                            </div>
+
+                            <div>
+                                <span class="label">Rating</span>
+                                <p>{{ record.coordinator_rating }}</p>
+                            </div>
+
+                            <div class="remarks">
+                                <span class="label">Remarks</span>
+                                <p>{{ record.coordinator_comment }}</p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                    </div>
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Area</th>
+                                <th>Waste Type</th>
+                                <th>Amount</th>
+                                <th>Alert Level</th>
+                                <th>Janitor</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Rating</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for record in records %}
+
+                            <tr>
+                                <td data-label="Area">{{ record.area }}</td>
+                                <td data-label="Waste Type">{{ record.waste_type }}</td>
+                                <td data-label="Amount">{{ record.amount }}</td>
+                                <td data-label="Alert Level">{{ record.alert_level }}</td>
+                                <td data-label="Janitor">{{ record.user.username }}</td>
+                                <td data-label="Date">{{ record.date }}</td>
+                                <td data-label="Time">{{ record.time }}</td>
+                                <td data-label="Rating">{{ record.coordinator_rating }}</td>
+                                <td data-label="Remarks">{{ record.coordinator_comment }}</td>
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                {% else %}
+
+                <p style="color:#6b7280;">
+                    Generate a report to view report data.
+                </p>
+
+                {% endif %}
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <script>
+
+    function toggleMonthField() {
+
+        const reportType =
+            document.getElementById('report_type').value;
+
+        const monthContainer =
+            document.getElementById('month_container');
+
+        if (reportType === 'yearly') {
+            monthContainer.style.display = 'none';
+        }
+
+        else {
+            monthContainer.style.display = 'block';
+        }
+    }
+
+    document.getElementById('report_type')
+        .addEventListener('change', toggleMonthField);
+
+    toggleMonthField();
+
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const layout = document.querySelector('.layout');
+        const menuBtn = document.querySelector('.mobile-menu-btn');
+        const overlay = document.querySelector('.sidebar-overlay');
+        const collapseBtn = document.querySelector('.sidebar-collapse');
+
+        menuBtn.addEventListener('click', function () {
+            layout.classList.add('sidebar-mobile-open');
+            overlay.classList.add('active');
+            menuBtn.classList.add('hidden');
+        });
+
+        overlay.addEventListener('click', function () {
+            layout.classList.remove('sidebar-mobile-open');
+            overlay.classList.remove('active');
+            menuBtn.classList.remove('hidden');
+        });
+
+        collapseBtn.addEventListener('click', function () {
+
+            if (window.innerWidth <= 900) {
+
+                layout.classList.remove('sidebar-mobile-open');
+                overlay.classList.remove('active');
+                menuBtn.classList.remove('hidden');
+
+            } else {
+
+                layout.classList.toggle('sidebar-collapsed');
+
+            }
+
+        });
+
+    });
+    </script>
+
+</body>
+</html>
