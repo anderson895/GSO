@@ -341,7 +341,16 @@
                 <div class="panel">
                     <div class="panel-header">
                         <h2>Recent Waste Records</h2>
-                        
+
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:14px 18px; background:#f7fbf6; border:1px solid rgba(20,152,79,0.14); border-radius:14px; padding:12px 18px; margin-bottom:20px;">
+                        <strong style="font-size:0.76rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted);">Alert Levels:</strong>
+                        {% for item in level_legend %}
+                        <span style="display:inline-flex; align-items:center; gap:7px; font-size:0.84rem; font-weight:600; color:var(--text);">
+                            <span style="width:14px; height:14px; border-radius:4px; background:{{ item.color }};"></span>
+                            {{ item.level }} <span style="color:var(--muted); font-weight:500;">({{ item.range }})</span>
+                        </span>
+                        {% endfor %}
                     </div>
                     <div class="table-wrapper">
                         <table>

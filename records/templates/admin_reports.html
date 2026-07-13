@@ -404,6 +404,16 @@
 
                 {% if records %}
 
+                <div style="display:flex; flex-wrap:wrap; align-items:center; gap:16px 20px; background:#f7fbf6; border:1px solid rgba(20,152,79,0.14); border-radius:16px; padding:14px 20px; margin-bottom:22px;">
+                    <strong style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted);">Alert Levels:</strong>
+                    {% for item in level_legend %}
+                    <span style="display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--text);">
+                        <span style="width:15px; height:15px; border-radius:4px; background:{{ item.color }};"></span>
+                        {{ item.level }} <span style="color:var(--muted); font-weight:500;">({{ item.range }})</span>
+                    </span>
+                    {% endfor %}
+                </div>
+
                 <div class="mobile-report-list">
 
                     {% for record in records %}

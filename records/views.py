@@ -83,9 +83,17 @@ GRAPH_LEVEL_COLORS = {
     'Critical': '#e5484d',  # red
 }
 
+# Colors used by the status pills / status labels across tables and area cards.
+STATUS_LEVEL_COLORS = {
+    'Low': '#16a34a',       # green
+    'Moderate': '#fbbf24',  # yellow
+    'High': '#f87171',      # red
+    'Critical': '#991b1b',  # dark red
+}
 
-def build_level_legend():
-    """Return legend rows (label, range text, color) based on current thresholds."""
+
+def _level_ranges():
+    """Return (level, range-text) pairs based on the current thresholds."""
     settings = ThresholdSettings.objects.get_or_create(id=1)[0]
     low = settings.low_max
     mod = settings.moderate_max
@@ -95,10 +103,22 @@ def build_level_legend():
         return f"{v:g}"
 
     return [
-        {'level': 'Low', 'range': f"0 - {fmt(low)} kg", 'color': GRAPH_LEVEL_COLORS['Low']},
-        {'level': 'Moderate', 'range': f"{fmt(low + 0.01)} - {fmt(mod)} kg", 'color': GRAPH_LEVEL_COLORS['Moderate']},
-        {'level': 'High', 'range': f"{fmt(mod + 0.01)} - {fmt(high)} kg", 'color': GRAPH_LEVEL_COLORS['High']},
-        {'level': 'Critical', 'range': f"≥ {fmt(high + 0.01)} kg", 'color': GRAPH_LEVEL_COLORS['Critical']},
+        ('Low', f"0 - {fmt(low)} kg"),
+        ('Moderate', f"{fmt(low + 0.01)} - {fmt(mod)} kg"),
+        ('High', f"{fmt(mod + 0.01)} - {fmt(high)} kg"),
+        ('Critical', f"≥ {fmt(high + 0.01)} kg"),
+    ]
+
+
+def build_level_legend(color_map=None):
+    """Return legend rows (label, range text, color) based on current thresholds.
+    Defaults to the bar-chart color scheme; pass STATUS_LEVEL_COLORS for the
+    status-pill scheme used by tables and area cards."""
+    if color_map is None:
+        color_map = GRAPH_LEVEL_COLORS
+    return [
+        {'level': level, 'range': rng, 'color': color_map[level]}
+        for level, rng in _level_ranges()
     ]
 
 
@@ -273,8 +293,9 @@ def waste_list(request):
         'selected_type': selected_type,
         'area_choices': Area.objects.values_list('area_name', flat=True),
         'threshold': threshold,
+        'level_legend': build_level_legend(STATUS_LEVEL_COLORS),
     }
-    
+
     if request.user.profile.role in ('Supervisor', 'Lead Janitor'):
         context['selected_area'] = selected_area
         context['type_choices'] = type_choices
@@ -315,9 +336,9 @@ def waste_graphs(request):
     if request.user.profile.role != 'Supervisor':
         return redirect('waste_list')
 
-    period = request.GET.get('period', 'daily')
+    period = request.GET.get('period', 'all')
     category = request.GET.get('category', 'both')
-    line_period = request.GET.get('line_period', 'last_week')
+    line_period = request.GET.get('line_period', 'yearly')
     selected_area = request.GET.get('area', 'All')
 
     today = date.today()
@@ -546,6 +567,9 @@ def waste_graphs(request):
         'totals': json.dumps(totals),
         'bar_colors': json.dumps(bar_colors),
 
+        'has_area_data': any(totals),
+        'has_trend_data': any(line_data),
+
         'period': period,
         'period_title': period_title,
 
@@ -720,6 +744,7 @@ def building_status(request):
         'area_statuses': area_statuses,
         'threshold': threshold,
         'guidelines': guidelines,
+        'level_legend': build_level_legend(STATUS_LEVEL_COLORS),
     })
 
 
@@ -1384,6 +1409,7 @@ def admin_reports(request):
         'records': records,
         'generated': generated,
         'default_year': date.today().year,
+        'level_legend': build_level_legend(STATUS_LEVEL_COLORS),
     })
 
 

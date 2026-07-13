@@ -58,8 +58,11 @@
         .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
         .panel-header h2 { margin: 0; font-size: 1.15rem; }
         .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(20, 152, 79, 0.12); color: var(--success); font-weight: 600; font-size: 0.85rem; }
-        .chart-wrap { margin-top: 22px; }
-        .chart-wrap canvas { width: 100% !important; height: 360px !important; }
+        .chart-wrap { margin-top: 22px; position: relative; height: 340px; width: 100%; }
+        .chart-wrap canvas { width: 100% !important; height: 100% !important; }
+        .chart-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; background: rgba(255,255,255,0.72); border-radius: 16px; pointer-events: none; }
+        .chart-empty strong { font-size: 1.05rem; color: var(--text); }
+        .chart-empty span { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
         .metric-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 24px; }
         .metric-item { background: #f8fdf7; border-radius: 20px; padding: 18px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(16, 185, 129, 0.12); }
         .metric-item div { display: flex; flex-direction: column; gap: 6px; }
@@ -90,7 +93,7 @@
             .filter-buttons button { width: 100%; }
             .cards-grid { grid-template-columns: 1fr; }
             .metric-row { grid-template-columns: 1fr; }
-            .chart-wrap canvas { height: 260px !important; }
+            .chart-wrap { height: 260px; }
             .panel-header { flex-direction: column; align-items: flex-start; gap: 12px; }
         }
             .mobile-menu-btn {
@@ -256,6 +259,12 @@
 
                 <div class="chart-wrap">
                     <canvas id="wasteChart"></canvas>
+                    {% if not has_area_data %}
+                    <div class="chart-empty">
+                        <strong>No data for this selection.</strong>
+                        <span>No records match the selected <b>{{ period_title }}</b> period, category, or area.<br>Try switching Time Period to <b>Yearly</b> or <b>All Time</b>.</span>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <div class="chart-legend">
@@ -298,6 +307,12 @@
                 </div>
                 <div class="chart-wrap">
                     <canvas id="trendChart"></canvas>
+                    {% if not has_trend_data %}
+                    <div class="chart-empty">
+                        <strong>No data for this range.</strong>
+                        <span>No records in the selected <b>{{ line_title }}</b> range.<br>Try <b>Yearly</b>.</span>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -320,10 +335,12 @@
                     data: totals,
                     backgroundColor: colors,
                     borderWidth: 1,
+                    maxBarThickness: 90,
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
                     tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}` } }
@@ -361,11 +378,12 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: { display: true, labels: { font: { size: 12 } } },
-                    tooltip: { 
-                        callbacks: { 
-                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} kg` 
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} kg`
                         },
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         padding: 12,

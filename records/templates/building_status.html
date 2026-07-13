@@ -247,7 +247,16 @@
                 </form>
             </div>
 
-            
+            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:16px 20px; background:var(--panel); border:1px solid rgba(16,185,129,0.14); border-radius:16px; padding:14px 20px; margin-bottom:24px; box-shadow:var(--shadow);">
+                <strong style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted);">Alert Levels:</strong>
+                {% for item in level_legend %}
+                <span style="display:inline-flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; color:var(--text);">
+                    <span style="width:15px; height:15px; border-radius:4px; background:{{ item.color }};"></span>
+                    {{ item.level }} <span style="color:var(--muted); font-weight:500;">({{ item.range }})</span>
+                </span>
+                {% endfor %}
+            </div>
+
             <div class="status-grid">
                 {% for status in area_statuses %}
                 <div class="status-card">
