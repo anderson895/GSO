@@ -375,7 +375,8 @@
 
                             <input type="number"
                                 name="year"
-                                value="{{ request.GET.year }}">
+                                placeholder="e.g. {{ default_year }}"
+                                value="{{ request.GET.year|default:default_year }}">
                         </p>
 
                         <button type="submit" class="add-btn">
@@ -519,6 +520,12 @@
                     </table>
 
                 </div>
+
+                {% elif generated %}
+
+                <p style="color:#b91c1c;">
+                    No records found for the selected period. Try a different month or year.
+                </p>
 
                 {% else %}
 

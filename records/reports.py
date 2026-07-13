@@ -21,10 +21,18 @@ BSU_MAROON = colors.HexColor('#7a1420')
 BSU_GOLD = colors.HexColor('#f2a900')
 
 LEVEL_COLORS = {
-    'Low': colors.HexColor('#16a34a'),
-    'Moderate': colors.HexColor('#d97706'),
-    'High': colors.HexColor('#ea580c'),
-    'Critical': colors.HexColor('#991b1b'),
+    'Low': colors.HexColor('#16a34a'),       # green
+    'Moderate': colors.HexColor('#fbbf24'),  # yellow
+    'High': colors.HexColor('#f87171'),      # red
+    'Critical': colors.HexColor('#991b1b'),  # dark red
+}
+
+# Text color per level (yellow needs dark text for readability).
+LEVEL_TEXT_COLORS = {
+    'Low': colors.white,
+    'Moderate': colors.HexColor('#0f172a'),
+    'High': colors.white,
+    'Critical': colors.white,
 }
 
 
@@ -39,7 +47,7 @@ def _draw_letterhead(canvas, doc):
         canvas.drawImage(
             path, 0, 0,
             width=A4[0], height=A4[1],
-            mask='auto', preserveAspectRatio=False,
+            preserveAspectRatio=False,
         )
 
 
@@ -122,7 +130,8 @@ def build_waste_report_pdf(records, report_type, period_label):
             Paragraph(str(r.waste_type), cell_style),
             Paragraph(f'{r.amount:.2f}' if r.amount is not None else '-', cell_style),
             Paragraph(level, ParagraphStyle(
-                'lvl', parent=cell_style, textColor=colors.white,
+                'lvl', parent=cell_style,
+                textColor=LEVEL_TEXT_COLORS.get(level, colors.white),
                 fontName='Helvetica-Bold', alignment=TA_CENTER)),
             Paragraph(r.user.username if r.user else 'Unknown', cell_style),
             Paragraph(str(r.date), cell_style),

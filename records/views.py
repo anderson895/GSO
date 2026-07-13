@@ -1357,8 +1357,9 @@ def admin_reports(request):
     year = request.GET.get('year')
 
     records = None
+    generated = bool(report_type and year)
 
-    if report_type and year:
+    if generated:
 
         records = WasteRecord.objects.filter(
             date__year=year
@@ -1381,6 +1382,8 @@ def admin_reports(request):
 
     return render(request, 'admin_reports.html', {
         'records': records,
+        'generated': generated,
+        'default_year': date.today().year,
     })
 
 
