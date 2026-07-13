@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -407,7 +408,7 @@
     <div class="sidebar-overlay"></div>
     <div class="layout">
         <aside class="sidebar">
-            <div class="brand"><span>BS</span><span class="brand-name">BSU Waste</span><button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button></div>
+            <div class="brand"><img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:40px;height:40px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;"><span class="brand-name">BSU Waste</span><button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button></div>
             <p>Manage your profile and security settings.</p>
             <div class="section-title">Main Menu</div>
 
@@ -424,10 +425,10 @@
                 {% else %} <a href="{% url 'waste_list' %}">Dashboard</a>
 
                 {% endif %}
-                {% if request.user.profile.role == 'Coordinator' %}
+                {% if request.user.profile.role == 'Supervisor' %}
                 <a href="{% url 'waste_graphs' %}">Analytics</a>
                 <a href="{% url 'building_status' %}">Area Monitoring</a>
-                <a href="{% url 'generate_report' %}">Report</a>
+                <a href="{% url 'message_dean' %}">Messages</a>
                 {% endif %}
                 
             </div>

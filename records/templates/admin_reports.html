@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -277,7 +278,7 @@
         <aside class="sidebar">
 
             <div class="brand">
-                <span>BS</span>
+                <img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:40px;height:40px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;">
                 <span class="brand-name">BSU Waste Monitoring</span>
                 <button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button>
             </div>
@@ -393,9 +394,9 @@
                     <h2>Report Preview</h2>
 
                     {% if records %}
-                    <a href="{% url 'export_csv' %}?report_type={{ request.GET.report_type }}&month={{ request.GET.month }}&year={{ request.GET.year }}"
+                    <a href="{% url 'export_pdf' %}?report_type={{ request.GET.report_type }}&month={{ request.GET.month }}&year={{ request.GET.year }}"
                     class="profile-btn">
-                        Export CSV
+                        Export PDF
                     </a>
                     {% endif %}
                 </div>

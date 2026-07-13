@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿{% load static %}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -68,6 +69,14 @@
         .filter-buttons button { border: 0; border-radius: 999px; padding: 12px 18px; background: rgba(255, 255, 255, 0.88); color: var(--text); font-weight: 700; cursor: pointer; box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04); transition: transform 0.2s ease, background 0.2s ease; }
         .filter-buttons button:hover { transform: translateY(-1px); }
         .filter-buttons .active { background: var(--primary); color: white; }
+
+        .graph-filter-bar { display: flex; gap: 18px; flex-wrap: wrap; margin: 18px 0 8px; }
+        .graph-filter { display: flex; flex-direction: column; gap: 6px; min-width: 200px; flex: 1; }
+        .graph-filter label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+        .graph-filter select { padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(20, 152, 79, 0.3); background: white; color: var(--text); font-family: inherit; font-weight: 600; cursor: pointer; }
+        .chart-legend { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(15, 23, 42, 0.06); }
+        .legend-item { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text); font-weight: 600; }
+        .legend-swatch { width: 16px; height: 16px; border-radius: 5px; display: inline-block; }
 
         @media (max-width: 1120px) { .chart-panel { grid-template-columns: 1fr; } .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 860px) { .sidebar { width: 240px; padding: 24px 18px; } .main { padding: 20px; } }
@@ -150,7 +159,7 @@
     <div class="sidebar-overlay"></div>
     <div class="layout">
         <aside class="sidebar">
-            <div class="brand"><span>BS</span><span class="brand-name">BSU Waste</span><button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button></div>
+            <div class="brand"><img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:40px;height:40px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;"><span class="brand-name">BSU Waste Mgmt</span><button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button></div>
             <p>Waste analytics and alert levels for plastic and general waste.</p>
             <div class="section-title">Main Menu</div>
             <div class="nav-links">
@@ -158,7 +167,7 @@
                 {% if request.user.profile.role == "Supervisor" %}
                 <a href="{% url 'waste_graphs' %}" class="active">Analytics</a>
                 <a href="{% url 'building_status' %}">Area Monitoring</a>
-                <a href="{% url 'generate_report' %}">Report</a>
+                <a href="{% url 'message_dean' %}">Messages{% if critical_college_count %}<span style="background:#ef4444;color:#fff;border-radius:999px;padding:2px 9px;font-size:0.72rem;font-weight:700;">{{ critical_college_count }}</span>{% endif %}</a>
                 {% endif %}
             </div>
             <div class="section-title">Account</div>
@@ -184,19 +193,6 @@
                     </div>
                 </div>
             </div>
-
-            <form method="get" style="display:flex; align-items:center; gap:14px; margin-bottom:24px; flex-wrap:wrap;">
-                <label for="area-filter-top" style="font-weight:700; color: var(--muted);">Select Area:</label>
-                <select id="area-filter-top" name="area" onchange="this.form.submit()" style="padding: 12px 16px; border-radius: 999px; border: 1px solid rgba(20, 152, 79, 0.3); background: white; color: var(--text); min-width: 220px; cursor: pointer; font-family: inherit;">
-                    <option value="All" {% if selected_area == 'All' %}selected{% endif %}>All Areas</option>
-                    {% for area in area_choices %}
-                        <option value="{{ area }}" {% if selected_area == area %}selected{% endif %}>{{ area }}</option>
-                    {% endfor %}
-                </select>
-                <input type="hidden" name="period" value="{{ period }}">
-                <input type="hidden" name="category" value="{{ category }}">
-                <input type="hidden" name="line_period" value="{{ line_period }}">
-            </form>
 
             <div class="cards-grid">
                 <div class="card">
@@ -224,41 +220,67 @@
             <div class="large-panel">
                 <div class="panel-header">
                     <h2>Waste per Area</h2>
-                    <span class="badge">{{ category|default:'Both' }}</span>
                 </div>
-                <div class="filter-buttons">
-                    <button type="button" onclick="location.href='?period=daily&category={{ category }}&area={{ selected_area|urlencode }}&line_period={{ line_period }}'" class="{% if period == 'daily' %}active{% endif %}">Daily</button>
-                    <button type="button" onclick="location.href='?period=weekly&category={{ category }}&area={{ selected_area|urlencode }}&line_period={{ line_period }}'" class="{% if period == 'weekly' %}active{% endif %}">Weekly</button>
-                    <button type="button" onclick="location.href='?period=monthly&category={{ category }}&area={{ selected_area|urlencode }}&line_period={{ line_period }}'" class="{% if period == 'monthly' %}active{% endif %}">Monthly</button>
-                    <button type="button" onclick="location.href='?period=yearly&category={{ category }}&area={{ selected_area|urlencode }}&line_period={{ line_period }}'" class="{% if period == 'yearly' %}active{% endif %}">Yearly</button>
-                </div>
-                <div class="filter-buttons">
-                    <button type="button" onclick="location.href='?period={{ period }}&category=Waste With Plastic&area={{ selected_area|urlencode }}&line_period={{ line_period }}'" class="{% if category == 'Waste With Plastic' %}active{% endif %}">
-                        Waste With Plastic
-                    </button>
-                    <button type="button" onclick="location.href='?period={{ period }}&category=Plastic Only&area={{ selected_area|urlencode }}&line_period={{ line_period }}'" class="{% if category == 'Plastic Only' %}active{% endif %}">
-                        Plastic Only
-                    </button>
-                    <button type="button" onclick="location.href='?period={{ period }}&category=Waste Without Plastic&area={{ selected_area|urlencode }}&line_period={{ line_period }}'" class="{% if category == 'Waste Without Plastic' %}active{% endif %}">
-                        Waste Without Plastic
-                    </button>
-                </div>
+
+                <form method="get" class="graph-filter-bar">
+                    <div class="graph-filter">
+                        <label>Time Period</label>
+                        <select name="period" onchange="this.form.submit()">
+                            <option value="daily" {% if period == 'daily' %}selected{% endif %}>Daily</option>
+                            <option value="weekly" {% if period == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if period == 'monthly' %}selected{% endif %}>Monthly</option>
+                            <option value="yearly" {% if period == 'yearly' %}selected{% endif %}>Yearly</option>
+                            <option value="all" {% if period == 'all' %}selected{% endif %}>All Time</option>
+                        </select>
+                    </div>
+                    <div class="graph-filter">
+                        <label>Waste Category</label>
+                        <select name="category" onchange="this.form.submit()">
+                            <option value="both" {% if category == 'both' %}selected{% endif %}>All Categories</option>
+                            <option value="Waste With Plastic" {% if category == 'Waste With Plastic' %}selected{% endif %}>Waste With Plastic</option>
+                            <option value="Plastic Only" {% if category == 'Plastic Only' %}selected{% endif %}>Plastic Only</option>
+                            <option value="Waste Without Plastic" {% if category == 'Waste Without Plastic' %}selected{% endif %}>Waste Without Plastic</option>
+                        </select>
+                    </div>
+                    <div class="graph-filter">
+                        <label>Select Area</label>
+                        <select name="area" onchange="this.form.submit()">
+                            <option value="All" {% if selected_area == 'All' %}selected{% endif %}>All Areas</option>
+                            {% for area in area_choices %}
+                            <option value="{{ area }}" {% if selected_area == area %}selected{% endif %}>{{ area }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <input type="hidden" name="line_period" value="{{ line_period }}">
+                </form>
+
                 <div class="chart-wrap">
                     <canvas id="wasteChart"></canvas>
                 </div>
-            </div>
 
-            <div class="small-panel metric-row">
-                <div class="metric-item">
-                    <div>
-                        <span>Average Daily</span>
-                        <strong>{{ average_daily|floatformat:2 }}</strong>
-                    </div>
+                <div class="chart-legend">
+                    {% for item in level_legend %}
+                    <span class="legend-item">
+                        <span class="legend-swatch" style="background: {{ item.color }};"></span>
+                        {{ item.level }} ({{ item.range }})
+                    </span>
+                    {% endfor %}
                 </div>
-                <div class="metric-item">
-                    <div>
-                        <span>Highest Volume</span>
-                        <strong>{{ highest_building_value|floatformat:2 }}</strong>
+
+                <div class="metric-row" style="margin-top: 20px;">
+                    <div class="metric-item">
+                        <div>
+                            <span>Average Daily Waste</span>
+                            <strong>{{ average_daily|floatformat:2 }} kg</strong>
+                            <small style="color: var(--muted); font-size: 0.82rem;">Average waste generated per day.</small>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div>
+                            <span>Highest Volume (Per Day)</span>
+                            <strong>{{ highest_building_value|floatformat:2 }} kg</strong>
+                            <small style="color: var(--muted); font-size: 0.82rem;">Highest recorded waste in a single area.</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -307,7 +329,8 @@
                     tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}` } }
                 },
                 scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Amount (kg)' } }
+                    y: { beginAtZero: true, title: { display: true, text: 'Amount (kg)' } },
+                    x: { title: { display: true, text: 'College / Area' }, ticks: { autoSkip: false, maxRotation: 40, minRotation: 0 } }
                 }
             }
         });

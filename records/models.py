@@ -106,6 +106,26 @@ class GeneratedReport(models.Model):
         return self.file_name
 
 
+class DeanMessage(models.Model):
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='sent_dean_messages'
+    )
+    area = models.ForeignKey('Area', on_delete=models.CASCADE)
+    subject = models.CharField(max_length=200)
+    body = models.TextField()
+    alert_level = models.CharField(max_length=10, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.subject} ({self.area})"
+
+
 class ThresholdSettings(models.Model):
     low_max = models.FloatField(default=4.00)
     moderate_max = models.FloatField(default=7.00)

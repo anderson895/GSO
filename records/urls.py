@@ -8,11 +8,9 @@ from .views import (
     logout_view,
     waste_graphs,
     building_status,
-    generate_report,
+    message_dean,
     admin_dashboard,
-    admin_reports
-    ThresholdSettings,
-    ResponseGuidelines
+    admin_reports,
 )
 
 urlpatterns = [
@@ -42,7 +40,7 @@ urlpatterns = [
 
     ##ADMIN REPORTS
     path('admin-reports/', views.admin_reports, name='admin_reports'),
-    path('export-csv/', views.export_csv, name='export_csv'),
+    path('export-pdf/', views.export_pdf, name='export_pdf'),
 
 
     ##ADMIN SETTINGS
@@ -57,7 +55,9 @@ urlpatterns = [
 
     path('graphs/', waste_graphs, name='waste_graphs'),
     path('area-monitoring/', building_status, name='building_status'),
-    path('report/', generate_report, name='generate_report'),
+
+    ##COORDINATOR MESSAGES
+    path('messages/', message_dean, name='message_dean'),
 
     path('logout/', logout_view, name='logout'),
 ]

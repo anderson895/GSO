@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -243,7 +244,7 @@
         <aside class="sidebar">
 
             <div class="brand">
-                <span>BS</span>
+                <img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:40px;height:40px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;">
                 <span class="brand-name">BSU Waste Monitoring</span>
                 <button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button>
             </div>

@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+{% load static %}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -113,7 +114,7 @@
     <div class="layout">
         <aside class="sidebar">
             <div class="brand" style="display: flex; align-items: center; gap: 12px; font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em;">
-                <span style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255, 255, 255, 0.12); display: grid; place-items: center; font-weight: 700; font-size: 0.9rem;">BS</span>
+                <img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:40px;height:40px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;">
                 <span class="brand-name">BSU Waste</span>
                 <button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button>
             </div>
@@ -121,10 +122,10 @@
             <div class="section-title">Navigation</div>
             <div class="nav-links">
                 <a href="{% url 'waste_list' %}">Dashboard</a>
-                {% if request.user.profile.role == "Coordinator" %}
+                {% if request.user.profile.role == "Supervisor" %}
                 <a href="{% url 'waste_graphs' %}">Analytics</a>
                 <a href="{% url 'building_status' %}">Area Monitoring</a>
-                <a href="{% url 'generate_report' %}">Report</a>
+                <a href="{% url 'message_dean' %}">Messages</a>
                 {% endif %}
             </div>
             <div class="section-title">Account</div>

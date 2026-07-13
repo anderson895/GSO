@@ -1,6 +1,6 @@
 ﻿from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_protect
-from .models import WasteRecord, Profile, Area, GeneratedReport, ThresholdSettings, ResponseGuidelines
+from .models import WasteRecord, Profile, Area, GeneratedReport, ThresholdSettings, ResponseGuidelines, DeanMessage
 from .forms import WasteForm, EditWasteForm
 from datetime import date, timedelta
 from django.contrib.auth.models import User
@@ -9,7 +9,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count
 from django.http import HttpResponse
-import csv
 from django.db.models.functions import TruncMonth
 import json
 
@@ -75,6 +74,32 @@ LEVEL_ORDER = {
     'High': 2,
     'Critical': 3,
 }
+
+# Colors used for the "Waste per Area" bar chart / legend (matches design reference).
+GRAPH_LEVEL_COLORS = {
+    'Low': '#f6c445',       # amber
+    'Moderate': '#74c476',  # green
+    'High': '#f39019',      # orange
+    'Critical': '#e5484d',  # red
+}
+
+
+def build_level_legend():
+    """Return legend rows (label, range text, color) based on current thresholds."""
+    settings = ThresholdSettings.objects.get_or_create(id=1)[0]
+    low = settings.low_max
+    mod = settings.moderate_max
+    high = settings.high_max
+
+    def fmt(v):
+        return f"{v:g}"
+
+    return [
+        {'level': 'Low', 'range': f"0 - {fmt(low)} kg", 'color': GRAPH_LEVEL_COLORS['Low']},
+        {'level': 'Moderate', 'range': f"{fmt(low + 0.01)} - {fmt(mod)} kg", 'color': GRAPH_LEVEL_COLORS['Moderate']},
+        {'level': 'High', 'range': f"{fmt(mod + 0.01)} - {fmt(high)} kg", 'color': GRAPH_LEVEL_COLORS['High']},
+        {'level': 'Critical', 'range': f"≥ {fmt(high + 0.01)} kg", 'color': GRAPH_LEVEL_COLORS['Critical']},
+    ]
 
 
 def janitor_required(view_func):
@@ -374,7 +399,7 @@ def waste_graphs(request):
     ]
 
     bar_colors = [
-        COLOR_MAP[area_totals[label]['level']]
+        GRAPH_LEVEL_COLORS[area_totals[label]['level']]
         for label in labels
     ]
 
@@ -546,6 +571,8 @@ def waste_graphs(request):
         'area_choices': Area.objects.values_list('area_name', flat=True),
 
         'selected_area': selected_area,
+
+        'level_legend': build_level_legend(),
     })
 
 
@@ -767,80 +794,108 @@ def edit_profile(request):
     return render(request, 'profile.html', {'profile': profile})
 
 
-def generate_report(request):
+def college_waste_summary(area_name):
+    """7-day waste summary + current level for a college/area, used by the
+    Message College Dean page."""
+    today = date.today()
+    start = today - timedelta(days=6)
+
+    qs = WasteRecord.objects.filter(
+        area__area_name=area_name,
+        date__gte=start,
+        date__lte=today,
+    )
+
+    reports_submitted = qs.count()
+    period_total = qs.aggregate(total=Sum('amount'))['total'] or 0
+    average_daily = period_total / 7
+
+    # Classify each day's total into an alert level.
+    day_totals = {}
+    for record in qs:
+        day_totals[record.date] = day_totals.get(record.date, 0) + record.amount
+
+    critical_days = high_days = moderate_days = low_days = 0
+    for total in day_totals.values():
+        level, _ = get_level_action(total)
+        if level == 'Critical':
+            critical_days += 1
+        elif level == 'High':
+            high_days += 1
+        elif level == 'Moderate':
+            moderate_days += 1
+        else:
+            low_days += 1
+
+    current_level, current_desc = get_level_action(average_daily)
+
+    return {
+        'reports_submitted': reports_submitted,
+        'average_daily': round(average_daily, 2),
+        'critical_days': critical_days,
+        'high_days': high_days,
+        'moderate_days': moderate_days,
+        'low_days': low_days,
+        'current_level': current_level,
+        'current_desc': current_desc,
+    }
+
+
+@login_required
+@csrf_protect
+def message_dean(request):
+    """Coordinator (Supervisor) sends an advisory message to a college Dean."""
     if request.user.profile.role != 'Supervisor':
         return redirect('waste_list')
 
+    area_choices = list(Area.objects.values_list('area_name', flat=True))
+    selected_area = request.GET.get('area') or (area_choices[0] if area_choices else '')
+
     if request.method == 'POST':
-        # Generate CSV file
-        period = request.POST.get('period', 'daily')
-        category = request.POST.get('category', 'both')
-        selected_area = request.POST.get('area', 'All')
-        
-        today = date.today()
-        if period == 'daily':
-            start_date = today
-        elif period == 'weekly':
-            start_date = today - timedelta(days=6)
-        elif period == 'monthly':
-            start_date = today - timedelta(days=29)
-        elif period == 'yearly':
-            start_date = today - timedelta(days=364)
-        else:
-            start_date = None
+        selected_area = request.POST.get('area', selected_area)
+        subject = request.POST.get('subject', '').strip()
+        body = request.POST.get('body', '').strip()
+        area = Area.objects.filter(area_name=selected_area).first()
 
-        reports = WasteRecord.objects.all().order_by('-submitted_at')
-        if selected_area != 'All':
-            reports = reports.filter(
-                area__area_name=selected_area
+        if area and subject and body:
+            summary = college_waste_summary(selected_area)
+            DeanMessage.objects.create(
+                sender=request.user,
+                area=area,
+                subject=subject,
+                body=body,
+                alert_level=summary['current_level'],
             )
-        if category in [
-            'Waste With Plastic',
-            'Plastic Only',
-            'Waste Without Plastic'
-        ]:
-            reports = reports.filter(waste_type=category)
-        if start_date is not None:
-            reports = reports.filter(date__gte=start_date, date__lte=today)
+            messages.success(request, f'Message sent to the Dean of {selected_area}.')
+            return redirect(f"{request.path}?area={selected_area}")
 
-        # Create CSV response
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="waste_report_{today}.csv"'
-        writer = csv.writer(response)
-        writer.writerow(['Area', 'Waste Type', 'Amount (kg)', 'Alert Level', 'Janitor', 'Date', 'Time', 'Rating', 'Remarks'])
-        
-        for report in reports:
-            writer.writerow([
-                report.area,
-                report.waste_type,
-                report.amount,
-                report.alert_level,
-                report.user.username if report.user else 'Unknown',
-                report.date,
-                report.time,
-                report.coordinator_rating if report.coordinator_rating else '-',
-                report.coordinator_comment if report.coordinator_comment else '-',
-            ])
-        
-        return response
+        messages.error(request, 'Please complete all fields before sending.')
 
-    # GET request - show report page
-    period = request.GET.get('period', 'daily')
-    category = request.GET.get('category', 'both')
-    selected_area = request.GET.get('area', 'All')
-    
-    area_choices = Area.objects.values_list(
-        'area_name',
-        flat=True
+    summary = college_waste_summary(selected_area) if selected_area else None
+    sent_messages = DeanMessage.objects.filter(sender=request.user)[:10]
+
+    default_subject = (
+        f"Urgent: {summary['current_level']} Waste Level in {selected_area}"
+        if summary else ''
+    )
+    default_body = (
+        f"Good day, Dean.\n\n"
+        f"This is to inform you that the waste level in {selected_area} is currently "
+        f"{summary['current_level'].upper()}.\n"
+        f"Immediate action is necessary to address the increasing waste "
+        f"accumulation in your area.\n\n"
+        f"Please advise your staff to prioritize waste collection and proper disposal.\n\n"
+        f"Thank you."
+        if summary else ''
     )
 
-    reports = GeneratedReport.objects.all().order_by('-generated_at')
-    return render(request, 'report.html', {
+    return render(request, 'message_college_dean.html', {
         'area_choices': area_choices,
         'selected_area': selected_area,
-        'category': category,
-        'period': period,
-        'reports': reports,
+        'summary': summary,
+        'sent_messages': sent_messages,
+        'default_subject': default_subject,
+        'default_body': default_body,
     })
 
 
@@ -1330,55 +1385,38 @@ def admin_reports(request):
 
 
 @login_required
-def export_csv(request):
+def export_pdf(request):
+    """Export the waste summary report as a PDF styled with the official
+    Bulacan State University (GSO) letterhead."""
+    from .reports import build_waste_report_pdf
 
     report_type = request.GET.get('report_type')
     month = request.GET.get('month')
     year = request.GET.get('year')
 
-    records = WasteRecord.objects.filter(
-        date__year=year
-    )
+    records = WasteRecord.objects.filter(date__year=year)
 
     if report_type == 'monthly' and month:
-        records = records.filter(date__month=month)
+        records = records.filter(date__month=month).order_by('area', 'date', 'time')
+    else:
+        records = records.order_by('date__month', 'area', 'date', 'time')
 
-    response = HttpResponse(
-        content_type='text/csv'
-    )
+    MONTHS = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December']
+    if report_type == 'monthly' and month:
+        try:
+            period_label = f"{MONTHS[int(month)]} {year}"
+        except (ValueError, IndexError):
+            period_label = f"{year}"
+    else:
+        period_label = f"Year {year}"
 
+    pdf_bytes = build_waste_report_pdf(records, report_type or 'yearly', period_label)
+
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = (
-        'attachment; filename="waste_report.csv"'
+        f'attachment; filename="GSO_Waste_Report_{period_label.replace(" ", "_")}.pdf"'
     )
-
-    writer = csv.writer(response)
-
-    writer.writerow([
-        'Area',
-        'Waste Type',
-        'Amount',
-        'Alert Level',
-        'Janitor',
-        'Date',
-        'Time',
-        'Rating',
-        'Remarks'
-    ])
-
-    for record in records:
-
-        writer.writerow([
-            record.area,
-            record.waste_type,
-            record.amount,
-            record.alert_level,
-            record.user.username if record.user else '',
-            record.date,
-            record.time,
-            record.coordinator_rating,
-            record.coordinator_comment
-        ])
-
     return response
 
 
@@ -1495,6 +1533,19 @@ def dean_dashboard(request):
 
     recent_records = qs.order_by('-submitted_at')[:8]
 
+    # ----- Messages from Coordinators -----
+    dean_messages_qs = DeanMessage.objects.all()
+    if selected_area != 'All':
+        dean_messages_qs = dean_messages_qs.filter(area__area_name=selected_area)
+    dean_messages = list(dean_messages_qs.select_related('area', 'sender')[:15])
+    unread_messages = sum(1 for m in dean_messages if not m.is_read)
+
+    # Mark the messages the Dean is now viewing as read, so the notification
+    # badge clears the next time the dashboard loads.
+    unread_ids = [m.id for m in dean_messages if not m.is_read]
+    if unread_ids:
+        DeanMessage.objects.filter(id__in=unread_ids).update(is_read=True)
+
     # ----- Alerts -----
     # Determine each college's CURRENT alert level (from its latest record)
     # so the dean is warned when a college is Critical.
@@ -1539,6 +1590,8 @@ def dean_dashboard(request):
         'monitored_areas': monitored_areas,
         'records': recent_records,
         'critical_areas': critical_areas,
+        'dean_messages': dean_messages,
+        'unread_messages': unread_messages,
         'selected_alert_level': selected_alert_level,
         'selected_alert_desc': selected_alert_desc,
         'area_labels': json.dumps(area_labels),

@@ -154,21 +154,21 @@
     <!-- ============ SIDEBAR ============ -->
     <aside class="sidebar">
         <div class="brand">
-            <span class="logo">EP</span>
-            <div>Eco Portal<small>Dean Access</small></div>
+            <img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:44px;height:44px;border-radius:12px;background:#fff;padding:3px;object-fit:contain;">
+            <div>Waste Management<small>Dean Access</small></div>
         </div>
 
         <div>
 
             <nav class="nav-links">
-                <a href="{% url 'login' %}"> Back to Login</a>
-                
+                <a href="#messages">Messages{% if unread_messages %} <span style="background:#ef4444;color:#fff;border-radius:999px;padding:2px 9px;font-size:0.72rem;font-weight:700;">{{ unread_messages }}</span>{% endif %}</a>
+                <a href="{% url 'login' %}">Back to Login</a>
             </nav>
         </div>
 
         <div class="sidebar-footer">
-            Waste Management System<br>
-            Dean Analytics Overview
+            Bulacan State University<br>
+            Waste Management Information System
         </div>
     </aside>
 
@@ -278,6 +278,12 @@
             <div class="panel">
                 <h2>Records by Alert Level</h2>
                 <canvas id="alertChart"></canvas>
+                <div style="display:flex; flex-wrap:wrap; gap:16px; justify-content:center; margin-top:14px; padding-top:12px; border-top:1px solid #eef2f1;">
+                    <span style="display:inline-flex;align-items:center;gap:7px;font-size:0.82rem;font-weight:600;"><span style="width:14px;height:14px;border-radius:4px;background:#ef4444;"></span>Critical</span>
+                    <span style="display:inline-flex;align-items:center;gap:7px;font-size:0.82rem;font-weight:600;"><span style="width:14px;height:14px;border-radius:4px;background:#f59e0b;"></span>High</span>
+                    <span style="display:inline-flex;align-items:center;gap:7px;font-size:0.82rem;font-weight:600;"><span style="width:14px;height:14px;border-radius:4px;background:#3b82f6;"></span>Moderate</span>
+                    <span style="display:inline-flex;align-items:center;gap:7px;font-size:0.82rem;font-weight:600;"><span style="width:14px;height:14px;border-radius:4px;background:#10b981;"></span>Low</span>
+                </div>
             </div>
 
             <!-- Recent records -->
@@ -308,6 +314,25 @@
                     </tbody>
                 </table>
             </div>
+        </section>
+
+        <!-- Messages from Coordinators -->
+        <section class="table-panel" id="messages" style="margin-top:28px;">
+            <h2>Messages from Coordinators</h2>
+            {% if dean_messages %}
+                {% for m in dean_messages %}
+                <div class="alert-banner {% if m.alert_level == 'Critical' %}danger{% else %}ok{% endif %}" style="margin-bottom:16px;">
+                    <h3>{{ m.subject }}</h3>
+                    <p style="white-space:pre-line; margin-top:6px;">{{ m.body }}</p>
+                    <div style="margin-top:10px; font-size:0.82rem; color:var(--muted);">
+                        <span class="lvl {{ m.alert_level }}">{{ m.alert_level }}</span>
+                        &nbsp; {{ m.area }} &middot; from {{ m.sender.username }} &middot; {{ m.created_at|date:"M d, Y g:i A" }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty">No messages from coordinators yet.</p>
+            {% endif %}
         </section>
     </main>
 </div>

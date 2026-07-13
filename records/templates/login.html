@@ -101,10 +101,12 @@
         }
 
         .emblem::before {
-            content: '🌍';
-            font-size: 48px;
-            filter: grayscale(0%);
-            opacity: 1;
+            content: none;
+        }
+        .emblem img {
+            width: 74px;
+            height: 74px;
+            object-fit: contain;
         }
 
         .emblem::after {
@@ -351,9 +353,9 @@
 <body>
     <div class="login-wrapper">
         <div class="hero-emblem">
-            <div class="emblem"></div>
-            <h1 class="portal-title">Eco Portal</h1>
-            <p class="portal-subtitle">Waste Management System</p>
+            <div class="emblem"><img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo"></div>
+            <h1 class="portal-title">Bulacan State University</h1>
+            <p class="portal-subtitle">Waste Management Information System</p>
             <div class="connection-line"></div>
         </div>
 

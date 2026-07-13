@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Django
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Scratch / generated artifacts
+_img_*.png
+_ref_page_*.png
+_legend_crop.png
+_test_report.*

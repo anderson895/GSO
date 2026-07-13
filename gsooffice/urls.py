@@ -34,7 +34,7 @@ urlpatterns = [
 
     ##ADMIN REPORTS
     path('admin-reports/', views.admin_reports, name='admin_reports'),
-    path('export-csv/', views.export_csv, name='export_csv'),
+    path('export-pdf/', views.export_pdf, name='export_pdf'),
 
     ##ADMIN SETTINGS
     path('threshold-settings/', views.threshold_settings, name='threshold_settings'),
@@ -44,7 +44,7 @@ urlpatterns = [
     path('waste/', views.waste_list, name='waste_list'),
     path('graphs/', views.waste_graphs, name='waste_graphs'),
     path('building-status/', views.building_status, name='building_status'),
-    path('report/', views.generate_report, name='generate_report'),
+    path('messages/', views.message_dean, name='message_dean'),
     path('profile/', views.edit_profile, name='edit_profile'),
     path('edit/<int:pk>/', views.edit_record, name='edit_record'),
     path('delete/<int:pk>/', views.delete_record, name='delete_record'),
