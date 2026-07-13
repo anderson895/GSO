@@ -82,6 +82,13 @@
             th { color: var(--muted); font-size: 0.95rem; }
             tr:hover { background: #f7fbf6; }
 
+            .area-group-row td { background: #eaf5ee; font-weight: 800; color: var(--sidebar); letter-spacing: 0.01em; border-bottom: 2px solid rgba(20, 152, 79, 0.28); }
+            .area-group-meta { font-weight: 600; color: var(--muted); font-size: 0.82rem; margin-left: 8px; }
+            tr.area-group-row:hover td { background: #eaf5ee; }
+
+            .mobile-area-heading { font-weight: 800; color: var(--sidebar); margin: 6px 0 12px; font-size: 1.05rem; }
+            .mobile-area-heading span { display: block; font-weight: 600; color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
+
             .status-pill { display: inline-block; padding: 8px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
             .status-low { background-color: #16a34a !important; color: white !important; }
             .status-moderate { background-color: #fbbf24 !important; color: #0f172a !important; }
@@ -416,7 +423,14 @@
 
                 <div class="mobile-report-list">
 
-                    {% for record in records %}
+                    {% for group in area_groups %}
+
+                    <div class="mobile-area-heading">
+                        {{ group.area }}
+                        <span>{{ group.records|length }} record{{ group.records|length|pluralize }} &middot; {{ group.total_bags|floatformat:0 }} bag{{ group.total_bags|floatformat:0|pluralize }}</span>
+                    </div>
+
+                    {% for record in group.records %}
 
                     <div class="mobile-report-card">
 
@@ -433,8 +447,8 @@
                             </div>
 
                             <div>
-                                <span class="label">Amount</span>
-                                <p>{{ record.amount }}</p>
+                                <span class="label">No. of Bags</span>
+                                <p>{{ record.amount|floatformat:0 }}</p>
                             </div>
 
                             <div>
@@ -487,6 +501,8 @@
 
                     {% endfor %}
 
+                    {% endfor %}
+
                     </div>
 
                 <div class="table-wrapper">
@@ -497,7 +513,7 @@
                             <tr>
                                 <th>Area</th>
                                 <th>Waste Type</th>
-                                <th>Amount</th>
+                                <th>No. of Bags</th>
                                 <th>Alert Level</th>
                                 <th>Janitor</th>
                                 <th>Date</th>
@@ -509,12 +525,24 @@
 
                         <tbody>
 
-                            {% for record in records %}
+                            {% for group in area_groups %}
+
+                            <tr class="area-group-row">
+                                <td colspan="9">
+                                    {{ group.area }}
+                                    <span class="area-group-meta">
+                                        {{ group.records|length }} record{{ group.records|length|pluralize }}
+                                        &middot; {{ group.total_bags|floatformat:0 }} bag{{ group.total_bags|floatformat:0|pluralize }}
+                                    </span>
+                                </td>
+                            </tr>
+
+                            {% for record in group.records %}
 
                             <tr>
                                 <td data-label="Area">{{ record.area }}</td>
                                 <td data-label="Waste Type">{{ record.waste_type }}</td>
-                                <td data-label="Amount">{{ record.amount }}</td>
+                                <td data-label="No. of Bags">{{ record.amount|floatformat:0 }}</td>
                                 <td data-label="Alert Level">{{ record.alert_level }}</td>
                                 <td data-label="Janitor">{{ record.user.username }}</td>
                                 <td data-label="Date">{{ record.date }}</td>
@@ -522,6 +550,8 @@
                                 <td data-label="Rating">{{ record.coordinator_rating }}</td>
                                 <td data-label="Remarks">{{ record.coordinator_comment }}</td>
                             </tr>
+
+                            {% endfor %}
 
                             {% endfor %}
 

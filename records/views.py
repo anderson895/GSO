@@ -10,7 +10,22 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count
 from django.http import HttpResponse
 from django.db.models.functions import TruncMonth
+from itertools import groupby
 import json
+
+
+def group_records_by_area(records):
+    """Group waste records per area with a bag subtotal for each area."""
+    ordered = sorted(records, key=lambda r: str(r.area))
+    groups = []
+    for area, items in groupby(ordered, key=lambda r: str(r.area)):
+        items = list(items)
+        groups.append({
+            'area': area,
+            'records': items,
+            'total_bags': sum(r.amount or 0 for r in items),
+        })
+    return groups
 
 ##HEAD SUPERVISOR'S SETUP PAGE
 def admin_exists():
@@ -1405,8 +1420,11 @@ def admin_reports(request):
                 'time'
             )
 
+    area_groups = group_records_by_area(records) if records else []
+
     return render(request, 'admin_reports.html', {
         'records': records,
+        'area_groups': area_groups,
         'generated': generated,
         'default_year': date.today().year,
         'level_legend': build_level_legend(STATUS_LEVEL_COLORS),

@@ -95,6 +95,10 @@ def build_waste_report_pdf(records, report_type, period_label):
         'Head', parent=styles['Normal'], fontSize=7, leading=8.5,
         textColor=colors.white, fontName='Helvetica-Bold',
     )
+    group_style = ParagraphStyle(
+        'GroupHead', parent=styles['Normal'], fontSize=7.5, leading=9,
+        textColor=BSU_MAROON, fontName='Helvetica-Bold',
+    )
 
     story = []
     story.append(Paragraph('General Services Office', subtitle_style))
@@ -106,6 +110,14 @@ def build_waste_report_pdf(records, report_type, period_label):
     records = list(records)
     total_amount = sum(r.amount or 0 for r in records)
 
+    # Group records per area (sorted so each area appears together).
+    from itertools import groupby
+    sorted_records = sorted(records, key=lambda r: str(r.area))
+    area_groups = [
+        (area, list(items))
+        for area, items in groupby(sorted_records, key=lambda r: str(r.area))
+    ]
+
     # Summary line
     summary_style = ParagraphStyle(
         'Summary', parent=styles['Normal'], fontSize=9.5,
@@ -113,35 +125,50 @@ def build_waste_report_pdf(records, report_type, period_label):
     )
     story.append(Paragraph(
         f'<b>Total Records:</b> {len(records)} &nbsp;&nbsp;|&nbsp;&nbsp; '
-        f'<b>Total Waste:</b> {total_amount:.2f} kg',
+        f'<b>Areas:</b> {len(area_groups)} &nbsp;&nbsp;|&nbsp;&nbsp; '
+        f'<b>Total Bags:</b> {total_amount:.0f}',
         summary_style,
     ))
 
     # Table
-    header = ['Area', 'Waste Type', 'Amount (kg)', 'Alert Level',
+    header = ['Area', 'Waste Type', 'No. of Bags', 'Alert Level',
               'Janitor', 'Date', 'Time', 'Rating', 'Remarks']
     data = [[Paragraph(h, head_style) for h in header]]
 
     level_cmds = []
-    for i, r in enumerate(records, start=1):
-        level = r.alert_level or '-'
-        row = [
-            Paragraph(str(r.area), cell_style),
-            Paragraph(str(r.waste_type), cell_style),
-            Paragraph(f'{r.amount:.2f}' if r.amount is not None else '-', cell_style),
-            Paragraph(level, ParagraphStyle(
-                'lvl', parent=cell_style,
-                textColor=LEVEL_TEXT_COLORS.get(level, colors.white),
-                fontName='Helvetica-Bold', alignment=TA_CENTER)),
-            Paragraph(r.user.username if r.user else 'Unknown', cell_style),
-            Paragraph(str(r.date), cell_style),
-            Paragraph(str(r.time) if r.time else '-', cell_style),
-            Paragraph(str(r.coordinator_rating) if r.coordinator_rating else '-', cell_style),
-            Paragraph(r.coordinator_comment or '-', cell_style),
-        ]
-        data.append(row)
-        if level in LEVEL_COLORS:
-            level_cmds.append(('BACKGROUND', (3, i), (3, i), LEVEL_COLORS[level]))
+    group_cmds = []
+    for area, items in area_groups:
+        subtotal = sum(r.amount or 0 for r in items)
+        gidx = len(data)
+        data.append([
+            Paragraph(
+                f'{area} &nbsp;&mdash;&nbsp; {len(items)} record(s), '
+                f'{subtotal:.0f} bag(s) total', group_style,
+            )
+        ] + [''] * 8)
+        group_cmds.append(('SPAN', (0, gidx), (-1, gidx)))
+        group_cmds.append(('BACKGROUND', (0, gidx), (-1, gidx), colors.HexColor('#e8f2ec')))
+
+        for r in items:
+            i = len(data)
+            level = r.alert_level or '-'
+            row = [
+                Paragraph(str(r.area), cell_style),
+                Paragraph(str(r.waste_type), cell_style),
+                Paragraph(f'{r.amount:.0f}' if r.amount is not None else '-', cell_style),
+                Paragraph(level, ParagraphStyle(
+                    'lvl', parent=cell_style,
+                    textColor=LEVEL_TEXT_COLORS.get(level, colors.white),
+                    fontName='Helvetica-Bold', alignment=TA_CENTER)),
+                Paragraph(r.user.username if r.user else 'Unknown', cell_style),
+                Paragraph(str(r.date), cell_style),
+                Paragraph(str(r.time) if r.time else '-', cell_style),
+                Paragraph(str(r.coordinator_rating) if r.coordinator_rating else '-', cell_style),
+                Paragraph(r.coordinator_comment or '-', cell_style),
+            ]
+            data.append(row)
+            if level in LEVEL_COLORS:
+                level_cmds.append(('BACKGROUND', (3, i), (3, i), LEVEL_COLORS[level]))
 
     if not records:
         data.append([Paragraph('No records found for this period.', cell_style)] + [''] * 8)
@@ -157,12 +184,11 @@ def build_waste_report_pdf(records, report_type, period_label):
         ('ALIGN', (2, 0), (3, -1), 'CENTER'),
         ('ALIGN', (7, 0), (7, -1), 'CENTER'),
         ('GRID', (0, 0), (-1, -1), 0.4, colors.HexColor('#cbd5e1')),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f1f7f2')]),
         ('TOPPADDING', (0, 0), (-1, -1), 3),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ('LEFTPADDING', (0, 0), (-1, -1), 4),
         ('RIGHTPADDING', (0, 0), (-1, -1), 4),
-    ] + level_cmds)
+    ] + group_cmds + level_cmds)
     table.setStyle(style)
 
     story.append(table)
