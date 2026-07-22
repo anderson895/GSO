@@ -223,43 +223,7 @@
 
     <div class="layout">
 
-        <aside class="sidebar">
-
-            <div class="brand">
-                <img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:40px;height:40px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;">
-                <span class="brand-name">BSU Waste Monitoring</span>
-                <button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button>
-            </div>
-
-            <p>Manage users, areas, reports, thresholds, and system settings.</p>
-
-            <div class="section-title">Main Menu</div>
-
-            <div class="nav-links">
-                <a href="{% url 'admin_dashboard' %}" class="active">Dashboard</a>
-                <a href="{% url 'user_list' %}">User Management</a>
-                <a href="{% url 'area_list' %}">Area Management</a>
-                <a href="{% url 'admin_reports' %}">Reports Summary</a>
-                <a href="{% url 'threshold_settings' %}">Threshold Settings</a>
-                <a href="{% url 'response_guidelines' %}">Response Guidelines</a>
-            </div>
-
-            <div class="section-title">Account</div>
-
-            <div class="nav-links">
-                <a href="{% url 'edit_profile' %}">
-                    Profile Settings
-                </a>
-            </div>
-
-            <form action="{% url 'logout' %}" method="POST" style="width:100%;">
-                {% csrf_token %}
-                <button type="submit" class="logout-btn">
-                    Logout
-                </button>
-            </form>
-
-        </aside>
+        {% include 'partials/admin_sidebar.html' with active='threshold' %}
 
         <main class="main">
 

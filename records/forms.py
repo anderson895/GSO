@@ -3,10 +3,10 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import WasteRecord, Profile, Area
 
-AMOUNT_CHOICES = [(str(x / 4), f"{x / 4:.2f}") for x in range(1, 41)]
+AMOUNT_CHOICES = [(str(i), str(i)) for i in range(1, 11)]
 
 class WasteForm(forms.ModelForm):
-    amount = forms.ChoiceField(choices=AMOUNT_CHOICES, label='Amount')
+    amount = forms.ChoiceField(choices=AMOUNT_CHOICES, label='Number of Bags')
 
     class Meta:
         model = WasteRecord
@@ -24,11 +24,11 @@ class WasteForm(forms.ModelForm):
     def clean_amount(self):
         amount = self.cleaned_data.get('amount')
         try:
-            amount = float(amount)
+            amount = int(amount)
         except (TypeError, ValueError):
             raise forms.ValidationError('Invalid amount selected.')
-        if amount <= 0:
-            raise forms.ValidationError('Amount must be greater than zero.')
+        if amount < 1 or amount > 10:
+            raise forms.ValidationError('Number of bags must be between 1 and 10.')
         return amount
     
     def __init__(self, *args, **kwargs):
@@ -40,7 +40,7 @@ class WasteForm(forms.ModelForm):
 
 
 class EditWasteForm(forms.ModelForm):
-    amount = forms.ChoiceField(choices=AMOUNT_CHOICES, label='Amount')
+    amount = forms.ChoiceField(choices=AMOUNT_CHOICES, label='Number of Bags')
 
     class Meta:
         model = WasteRecord
@@ -58,13 +58,12 @@ class EditWasteForm(forms.ModelForm):
     def clean_amount(self):
         amount = self.cleaned_data.get('amount')
         try:
-            amount = float(amount)
+            amount = int(amount)
         except (TypeError, ValueError):
             raise forms.ValidationError('Invalid amount selected.')
-        if amount <= 0:
-            raise forms.ValidationError('Amount must be greater than zero.')
+        if amount < 1 or amount > 10:
+            raise forms.ValidationError('Number of bags must be between 1 and 10.')
         return amount
-
 
 
 class RegisterForm(UserCreationForm):

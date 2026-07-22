@@ -99,30 +99,7 @@
 </head>
 <body>
 <div class="layout">
-    <aside class="sidebar">
-        <div class="brand">
-            <img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:44px;height:44px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;">
-            <span class="brand-name">Waste Management<br>Information System</span>
-        </div>
-        <p>Coordinator tools for monitoring and escalating critical waste levels.</p>
-        <div class="section-title">Main Menu</div>
-        <nav class="nav-links">
-            <a href="{% url 'waste_list' %}">Dashboard</a>
-            <a href="{% url 'waste_graphs' %}">Waste Analytics</a>
-            <a href="{% url 'building_status' %}">Area Monitoring</a>
-            <a href="{% url 'message_dean' %}" class="active">Messages
-                {% if critical_college_count %}<span class="badge-count">{{ critical_college_count }}</span>{% endif %}
-            </a>
-        </nav>
-        <div class="section-title">Account</div>
-        <nav class="nav-links">
-            <a href="{% url 'edit_profile' %}">Profile Settings</a>
-        </nav>
-        <form action="{% url 'logout' %}" method="POST" style="width:100%;">
-            {% csrf_token %}
-            <button type="submit" class="logout-btn">Log Out</button>
-        </form>
-    </aside>
+    {% include 'partials/staff_sidebar.html' with active='messages' %}
 
     <main class="main">
         <div>
@@ -147,10 +124,16 @@
                 <!-- LEFT: Select College + summary -->
                 <div class="card">
                     <h2>Select College</h2>
-                    <select name="area" onchange="window.location.href='{% url 'message_dean' %}?area=' + encodeURIComponent(this.value)">
+                    <select name="area" onchange="window.location.href='{% url 'message_dean' %}?area=' + encodeURIComponent(this.value) + '&period={{ period }}'">
                         {% for area in area_choices %}
                         <option value="{{ area }}" {% if area == selected_area %}selected{% endif %}>{{ area }}</option>
                         {% endfor %}
+                    </select>
+
+                    <label class="field-label" style="margin-top:16px;">Summary Period</label>
+                    <select name="period" onchange="window.location.href='{% url 'message_dean' %}?area=' + encodeURIComponent('{{ selected_area }}') + '&period=' + encodeURIComponent(this.value)">
+                        <option value="7days" {% if period == '7days' %}selected{% endif %}>Last 7 Days</option>
+                        <option value="month" {% if period == 'month' %}selected{% endif %}>Last 30 Days</option>
                     </select>
 
                     {% if summary %}
@@ -163,10 +146,10 @@
                     </div>
 
                     <div class="summary">
-                        <h3>College Waste Summary (Last 7 Days)</h3>
+                        <h3>College Waste Summary ({{ summary.period_label }})</h3>
                         <div class="summary-row">
                             <span>Average Daily Waste</span>
-                            <span class="pill {{ summary.current_level }}">{{ summary.average_daily }} kg</span>
+                            <span class="pill {{ summary.current_level }}">{{ summary.average_daily }} bags</span>
                         </div>
                         <div class="summary-row"><span>Reports Submitted</span><span class="val">{{ summary.reports_submitted }}</span></div>
                         <div class="summary-row"><span>Critical Days</span><span class="val">{{ summary.critical_days }}</span></div>

@@ -112,31 +112,7 @@
     <button type="button" class="mobile-menu-btn" aria-label="Open menu">☰</button>
     <div class="sidebar-overlay"></div>
     <div class="layout">
-        <aside class="sidebar">
-            <div class="brand" style="display: flex; align-items: center; gap: 12px; font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em;">
-                <img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:40px;height:40px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;">
-                <span class="brand-name">BSU Waste</span>
-                <button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button>
-            </div>
-            <p>Edit the waste record and keep area totals accurate.</p>
-            <div class="section-title">Navigation</div>
-            <div class="nav-links">
-                <a href="{% url 'waste_list' %}">Dashboard</a>
-                {% if request.user.profile.role == "Supervisor" %}
-                <a href="{% url 'waste_graphs' %}">Analytics</a>
-                <a href="{% url 'building_status' %}">Area Monitoring</a>
-                <a href="{% url 'message_dean' %}">Messages</a>
-                {% endif %}
-            </div>
-            <div class="section-title">Account</div>
-            <div class="nav-links">
-                <a href="{% url 'edit_profile' %}">Profile Settings</a>
-            </div>
-            <form action="{% url 'logout' %}" method="POST" style="width: 100%;">
-                {% csrf_token %}
-                <button type="submit" class="logout-btn">Logout</button>
-            </form>
-        </aside>
+        {% include 'partials/staff_sidebar.html' with active='' %}
         <main class="main">
             <section class="panel">
                 <h1>Edit Waste Record</h1>

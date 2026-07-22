@@ -118,10 +118,10 @@ def _level_ranges():
         return f"{v:g}"
 
     return [
-        ('Low', f"0 - {fmt(low)} kg"),
-        ('Moderate', f"{fmt(low + 0.01)} - {fmt(mod)} kg"),
-        ('High', f"{fmt(mod + 0.01)} - {fmt(high)} kg"),
-        ('Critical', f"≥ {fmt(high + 0.01)} kg"),
+        ('Low', f"0 - {fmt(low)} bags"),
+        ('Moderate', f"{fmt(low + 0.01)} - {fmt(mod)} bags"),
+        ('High', f"{fmt(mod + 0.01)} - {fmt(high)} bags"),
+        ('Critical', f"≥ {fmt(high + 0.01)} bags"),
     ]
 
 
@@ -259,40 +259,75 @@ def waste_list(request):
         last_month_total = last_query.aggregate(total=Sum('amount'))['total'] or 0
     
     # Calculate percentage change
-    if current_month_total == last_month_total:
+    has_previous_data = last_query.exists()
+    if not has_previous_data:
+        percentage_change = None
+        change_status = 'No previous data'
+        is_increased = False
+        change_indicator = 'neutral'
+        change_display = 'No previous data'
+    elif current_month_total == last_month_total:
         percentage_change = 0
         change_status = 'No Change'
         is_increased = False
-    elif last_month_total == 0:
-        percentage_change = 100
+        change_indicator = 'neutral'
+        change_display = '0.0%'
+    elif current_month_total > last_month_total:
+        percentage_change = ((current_month_total - last_month_total) / last_month_total) * 100
         change_status = 'Increased'
         is_increased = True
+        change_indicator = 'negative'
+        change_display = f'{abs(percentage_change):.1f}%'
     else:
-        percentage_change = ((current_month_total - last_month_total) / last_month_total) * 100
-        if current_month_total > last_month_total:
-            change_status = 'Increased'
-            is_increased = True
-        else:
-            change_status = 'Decreased'
-            is_increased = False
+        percentage_change = ((last_month_total - current_month_total) / last_month_total) * 100
+        change_status = 'Decreased'
+        is_increased = False
+        change_indicator = 'positive'
+        change_display = f'{abs(percentage_change):.1f}%'
+
+    grouped_reports = {}
+    for r in records:
+        report_key = (r.user_id, r.area_id, r.date, r.time)
+        if report_key not in grouped_reports:
+            grouped_reports[report_key] = {
+                'id': r.id,
+                'area': r.area,
+                'date': r.date,
+                'time': r.time,
+                'amount': 0,
+                'waste_type': r.waste_type,
+                'alert_level': r.alert_level,
+                'photo_url': r.photo.url if r.photo else None,
+                'janitor': r.user.username if r.user else 'Unknown',
+                'submitted_at': r.submitted_at,
+                'coordinator_rating': r.coordinator_rating,
+                'coordinator_comment': r.coordinator_comment,
+            }
+
+        grouped_reports[report_key]['amount'] += r.amount or 0
+        grouped_reports[report_key]['alert_level'] = get_stronger_alert(
+            grouped_reports[report_key]['alert_level'],
+            r.alert_level,
+        )
 
     data = []
-    for r in records:
-        _, action = get_level_action(r.amount)
+    for group in grouped_reports.values():
+        _, action = get_level_action(group['amount'])
         data.append({
-            'id': r.id,
-            'area': r.area,
-            'date': r.date,
-            'time': r.time,
-            'amount': r.amount,
-            'waste_type': r.waste_type,
-            'alert_level': r.alert_level,
+            'id': group['id'],
+            'area': group['area'],
+            'date': group['date'],
+            'time': group['time'],
+            'amount': group['amount'],
+            'waste_type': group['waste_type'],
+            'alert_level': group['alert_level'],
             'action': action,
-            'photo_url': r.photo.url if r.photo else None,
-            'janitor': r.user.username if r.user else 'Unknown',
-            'submitted_at': r.submitted_at,
-            'coordinator_rating': r.coordinator_rating,
-            'coordinator_comment': r.coordinator_comment,
+            'photo_url': group['photo_url'],
+            'janitor': group['janitor'],
+            'submitted_at': group['submitted_at'],
+            'coordinator_rating': group['coordinator_rating'],
+            'coordinator_comment': group['coordinator_comment'],
+            'bags_submitted': group['amount'],
         })
 
     threshold, created = ThresholdSettings.objects.get_or_create(id=1)
@@ -302,9 +337,11 @@ def waste_list(request):
         'data': data,
         'total_records': total_records,
         'total_waste_all': total_waste_all,
-        'percentage_change': abs(percentage_change),
+        'percentage_change': abs(percentage_change) if percentage_change is not None else None,
         'is_increased': is_increased,
         'change_status': change_status,
+        'change_indicator': change_indicator,
+        'change_display': change_display,
         'selected_type': selected_type,
         'area_choices': Area.objects.values_list('area_name', flat=True),
         'threshold': threshold,
@@ -834,11 +871,19 @@ def edit_profile(request):
     return render(request, 'profile.html', {'profile': profile})
 
 
-def college_waste_summary(area_name):
-    """7-day waste summary + current level for a college/area, used by the
-    Message College Dean page."""
+def college_waste_summary(area_name, period='7days'):
+    """Waste summary + current level for a college/area, used by the
+    Message College Dean page. `period` selects the timeframe:
+    '7days' (last 7 days) or 'month' (last 30 days)."""
     today = date.today()
-    start = today - timedelta(days=6)
+    if period == 'month':
+        days = 30
+        period_label = 'Last 30 Days'
+    else:
+        period = '7days'
+        days = 7
+        period_label = 'Last 7 Days'
+    start = today - timedelta(days=days - 1)
 
     qs = WasteRecord.objects.filter(
         area__area_name=area_name,
@@ -848,7 +893,7 @@ def college_waste_summary(area_name):
 
     reports_submitted = qs.count()
     period_total = qs.aggregate(total=Sum('amount'))['total'] or 0
-    average_daily = period_total / 7
+    average_daily = period_total / days
 
     # Classify each day's total into an alert level.
     day_totals = {}
@@ -878,6 +923,8 @@ def college_waste_summary(area_name):
         'low_days': low_days,
         'current_level': current_level,
         'current_desc': current_desc,
+        'period': period,
+        'period_label': period_label,
     }
 
 
@@ -890,15 +937,17 @@ def message_dean(request):
 
     area_choices = list(Area.objects.values_list('area_name', flat=True))
     selected_area = request.GET.get('area') or (area_choices[0] if area_choices else '')
+    period = request.GET.get('period', '7days')
 
     if request.method == 'POST':
         selected_area = request.POST.get('area', selected_area)
+        period = request.POST.get('period', period)
         subject = request.POST.get('subject', '').strip()
         body = request.POST.get('body', '').strip()
         area = Area.objects.filter(area_name=selected_area).first()
 
         if area and subject and body:
-            summary = college_waste_summary(selected_area)
+            summary = college_waste_summary(selected_area, period)
             DeanMessage.objects.create(
                 sender=request.user,
                 area=area,
@@ -907,11 +956,11 @@ def message_dean(request):
                 alert_level=summary['current_level'],
             )
             messages.success(request, f'Message sent to the Dean of {selected_area}.')
-            return redirect(f"{request.path}?area={selected_area}")
+            return redirect(f"{request.path}?area={selected_area}&period={period}")
 
         messages.error(request, 'Please complete all fields before sending.')
 
-    summary = college_waste_summary(selected_area) if selected_area else None
+    summary = college_waste_summary(selected_area, period) if selected_area else None
     sent_messages = DeanMessage.objects.filter(sender=request.user)[:10]
 
     default_subject = (
@@ -920,8 +969,10 @@ def message_dean(request):
     )
     default_body = (
         f"Good day, Dean.\n\n"
-        f"This is to inform you that the waste level in {selected_area} is currently "
-        f"{summary['current_level'].upper()}.\n"
+        f"Based on the waste summary for the {summary['period_label'].lower()}, "
+        f"the waste level in {selected_area} is currently "
+        f"{summary['current_level'].upper()}, with an average daily waste of "
+        f"{summary['average_daily']} bags.\n"
         f"Immediate action is necessary to address the increasing waste "
         f"accumulation in your area.\n\n"
         f"Please advise your staff to prioritize waste collection and proper disposal.\n\n"
@@ -932,6 +983,7 @@ def message_dean(request):
     return render(request, 'message_college_dean.html', {
         'area_choices': area_choices,
         'selected_area': selected_area,
+        'period': period,
         'summary': summary,
         'sent_messages': sent_messages,
         'default_subject': default_subject,
@@ -1391,43 +1443,137 @@ def delete_user(request, user_id):
 def admin_reports(request):
 
     report_type = request.GET.get('report_type')
-
     month = request.GET.get('month')
-
+    day = request.GET.get('day')
+    week = request.GET.get('week')
     year = request.GET.get('year')
+    current_year = date.today().year
+
+    all_records = WasteRecord.objects.all()
+    available_years = sorted({record.date.year for record in all_records}, reverse=True)
+
+    months_by_year = {}
+    days_by_year_month = {}
+    weeks_by_year_month = {}
+    for record in all_records:
+        y = record.date.year
+        m = record.date.month
+        d = record.date.day
+        months_by_year.setdefault(y, set()).add(m)
+        days_by_year_month.setdefault((y, m), set()).add(d)
+        weeks_by_year_month.setdefault((y, m), set()).add((d - 1) // 7 + 1)
+
+    months_by_year = {year_key: sorted(months_by_year[year_key]) for year_key in months_by_year}
+    days_by_year_month = {
+        f"{y}-{m}": sorted(days_by_year_month[(y, m)])
+        for (y, m) in days_by_year_month
+    }
+    weeks_by_year_month = {
+        f"{y}-{m}": sorted(weeks_by_year_month[(y, m)])
+        for (y, m) in weeks_by_year_month
+    }
+
+    selected_year = int(year) if year and year.isdigit() else None
+    if selected_year not in available_years:
+        selected_year = available_years[0] if available_years else None
+
+    available_months = months_by_year.get(selected_year, []) if selected_year else []
+    selected_month = int(month) if month and month.isdigit() else None
+    if selected_month not in available_months:
+        selected_month = None
+
+    selected_day = int(day) if day and day.isdigit() else None
+    selected_week = int(week) if week and week.isdigit() else None
+    month_key = f"{selected_year}-{selected_month}" if selected_year and selected_month else None
+    available_days = days_by_year_month.get(month_key, []) if month_key else []
+    available_weeks = weeks_by_year_month.get(month_key, []) if month_key else []
+    if selected_day not in available_days:
+        selected_day = None
+    if selected_week not in available_weeks:
+        selected_week = None
 
     records = None
-    generated = bool(report_type and year)
+    generated = False
+    if report_type and selected_year:
+        if report_type == 'yearly':
+            generated = True
+        elif report_type == 'monthly' and selected_month:
+            generated = True
+        elif report_type == 'weekly' and selected_month and selected_week:
+            generated = True
+        elif report_type == 'daily' and selected_month and selected_day:
+            generated = True
 
     if generated:
-
-        records = WasteRecord.objects.filter(
-            date__year=year
-        )
-
-        if report_type == 'monthly' and month:
-
+        records = WasteRecord.objects.filter(date__year=selected_year)
+        if report_type == 'daily':
             records = records.filter(
-                date__month=month
-            ).order_by('area', 'date', 'time')
+                date__month=selected_month,
+                date__day=selected_day
+            )
+        elif report_type == 'weekly':
+            import calendar
+            try:
+                _, last_day = calendar.monthrange(selected_year, selected_month)
+                week_start = 1 + (selected_week - 1) * 7
+                week_end = min(week_start + 6, last_day)
+                records = records.filter(
+                    date__month=selected_month,
+                    date__day__gte=week_start,
+                    date__day__lte=week_end
+                )
+            except Exception:
+                records = records.filter(date__month=selected_month)
+        elif report_type == 'monthly':
+            records = records.filter(date__month=selected_month)
 
-        elif report_type == 'yearly':
-
+        if report_type == 'yearly':
             records = records.order_by(
                 'date__month',
                 'area',
                 'date',
                 'time'
             )
+        else:
+            records = records.order_by('date', 'area', 'time')
 
     area_groups = group_records_by_area(records) if records else []
+    month_choices = [
+        (1, 'January'),
+        (2, 'February'),
+        (3, 'March'),
+        (4, 'April'),
+        (5, 'May'),
+        (6, 'June'),
+        (7, 'July'),
+        (8, 'August'),
+        (9, 'September'),
+        (10, 'October'),
+        (11, 'November'),
+        (12, 'December'),
+    ]
 
     return render(request, 'admin_reports.html', {
         'records': records,
         'area_groups': area_groups,
         'generated': generated,
-        'default_year': date.today().year,
         'level_legend': build_level_legend(STATUS_LEVEL_COLORS),
+        'years': available_years,
+        'available_years': available_years,
+        'available_months': available_months,
+        'available_days': available_days,
+        'available_weeks': available_weeks,
+        'month_choices': month_choices,
+        'selected_year': selected_year,
+        'selected_month': selected_month,
+        'selected_week': selected_week,
+        'selected_day': selected_day,
+        'selected_report_type': report_type,
+        'default_year': current_year,
+        'json_month_choices': json.dumps(month_choices),
+        'json_months_by_year': json.dumps(months_by_year),
+        'json_days_by_year_month': json.dumps(days_by_year_month),
+        'json_weeks_by_year_month': json.dumps(weeks_by_year_month),
     })
 
 
@@ -1435,22 +1581,50 @@ def admin_reports(request):
 def export_pdf(request):
     """Export the waste summary report as a PDF styled with the official
     Bulacan State University (GSO) letterhead."""
+    import calendar
+
     from .reports import build_waste_report_pdf
 
     report_type = request.GET.get('report_type')
     month = request.GET.get('month')
+    day = request.GET.get('day')
+    week = request.GET.get('week')
     year = request.GET.get('year')
 
     records = WasteRecord.objects.filter(date__year=year)
 
-    if report_type == 'monthly' and month:
+    if report_type == 'daily' and month and day:
+        records = records.filter(date__month=month, date__day=day).order_by('area', 'date', 'time')
+    elif report_type == 'weekly' and month and week:
+        try:
+            _, last_day = calendar.monthrange(int(year), int(month))
+            week_start = 1 + (int(week) - 1) * 7
+            week_end = min(week_start + 6, last_day)
+            records = records.filter(
+                date__month=month,
+                date__day__gte=week_start,
+                date__day__lte=week_end,
+            ).order_by('area', 'date', 'time')
+        except (ValueError, TypeError, IndexError):
+            records = records.filter(date__month=month).order_by('area', 'date', 'time')
+    elif report_type == 'monthly' and month:
         records = records.filter(date__month=month).order_by('area', 'date', 'time')
     else:
         records = records.order_by('date__month', 'area', 'date', 'time')
 
     MONTHS = ['', 'January', 'February', 'March', 'April', 'May', 'June',
               'July', 'August', 'September', 'October', 'November', 'December']
-    if report_type == 'monthly' and month:
+    if report_type == 'daily' and month and day:
+        try:
+            period_label = f"Daily — {MONTHS[int(month)]} {day}, {year}"
+        except (ValueError, IndexError):
+            period_label = f"Daily Report {year}"
+    elif report_type == 'weekly' and month and week:
+        try:
+            period_label = f"Weekly — {MONTHS[int(month)]} {year} (Week {week})"
+        except (ValueError, IndexError):
+            period_label = f"Weekly Report {year}"
+    elif report_type == 'monthly' and month:
         try:
             period_label = f"{MONTHS[int(month)]} {year}"
         except (ValueError, IndexError):
@@ -1544,8 +1718,29 @@ def dean_dashboard(request):
 
     area_choices = Area.objects.values_list('area_name', flat=True)
     selected_area = request.GET.get('area', 'All')
-
+    period = request.GET.get('period', 'daily')
+    
     qs = WasteRecord.objects.all()
+    
+    today = date.today()
+
+    if period == "daily":
+        qs = qs.filter(date=today)
+
+    elif period == "weekly":
+        qs = qs.filter(
+        date__gte=today - timedelta(days=7)
+    )
+
+    elif period == "monthly":
+        qs = qs.filter(
+        date__gte=today - timedelta(days=30)
+    )
+
+    elif period == "yearly":
+        qs = qs.filter(
+        date__gte=today - timedelta(days=365)
+    )
     if selected_area != 'All':
         qs = qs.filter(area__area_name=selected_area)
 
@@ -1562,13 +1757,22 @@ def dean_dashboard(request):
 
     # Breakdown by area (top 8 by amount)
     area_rows = (
-        qs.values('area')
+        qs.values('area__area_name')
         .annotate(total=Sum('amount'))
         .order_by('-total')[:8]
     )
-    area_labels = [r['area'] for r in area_rows]
-    area_values = [round(r['total'] or 0, 2) for r in area_rows]
 
+    area_labels = [
+        str(r['area__area_name'])
+        for r in area_rows
+    ]
+
+    area_values = [
+        round(r['total'] or 0, 2)
+        for r in area_rows
+    ]
+
+    
     # Breakdown by alert level
     alert_order = ['Critical', 'High', 'Moderate', 'Low']
     alert_map = {
@@ -1579,19 +1783,6 @@ def dean_dashboard(request):
     alert_values = [alert_map.get(level, 0) for level in alert_order]
 
     recent_records = qs.order_by('-submitted_at')[:8]
-
-    # ----- Messages from Coordinators -----
-    dean_messages_qs = DeanMessage.objects.all()
-    if selected_area != 'All':
-        dean_messages_qs = dean_messages_qs.filter(area__area_name=selected_area)
-    dean_messages = list(dean_messages_qs.select_related('area', 'sender')[:15])
-    unread_messages = sum(1 for m in dean_messages if not m.is_read)
-
-    # Mark the messages the Dean is now viewing as read, so the notification
-    # badge clears the next time the dashboard loads.
-    unread_ids = [m.id for m in dean_messages if not m.is_read]
-    if unread_ids:
-        DeanMessage.objects.filter(id__in=unread_ids).update(is_read=True)
 
     # ----- Alerts -----
     # Determine each college's CURRENT alert level (from its latest record)
@@ -1625,10 +1816,40 @@ def dean_dashboard(request):
         if latest_for_selected:
             selected_alert_level = latest_for_selected.alert_level
             selected_alert_desc = ALERT_DESCRIPTIONS.get(selected_alert_level, '')
+        # Get all Critical messages sent by Supervisors
+
+        # Alert status for selected college
+    selected_alert_level = None
+    selected_alert_desc = None
+    selected_message = None
+
+    if selected_area != 'All':
+        latest_for_selected = (
+            WasteRecord.objects.filter(area__area_name=selected_area)
+            .order_by('-submitted_at')
+            .first()
+        )
+
+        if latest_for_selected:
+            selected_alert_level = latest_for_selected.alert_level
+            selected_alert_desc = ALERT_DESCRIPTIONS.get(
+                selected_alert_level,
+                ''
+            )
+
+        selected_message = (
+            DeanMessage.objects.filter(
+                area__area_name=selected_area
+            )
+            .order_by('-id')
+            .first()
+        )
 
     context = {
         'area_choices': area_choices,
         'selected_area': selected_area,
+        'period': period,
+        'selected_message': selected_message,
         'total_waste': round(total_waste, 2),
         'total_records': total_records,
         'plastic_total': round(plastic_total, 2),
@@ -1637,15 +1858,16 @@ def dean_dashboard(request):
         'monitored_areas': monitored_areas,
         'records': recent_records,
         'critical_areas': critical_areas,
-        'dean_messages': dean_messages,
-        'unread_messages': unread_messages,
         'selected_alert_level': selected_alert_level,
         'selected_alert_desc': selected_alert_desc,
         'area_labels': json.dumps(area_labels),
         'area_values': json.dumps(area_values),
         'alert_labels': json.dumps(alert_labels),
         'alert_values': json.dumps(alert_values),
-        'waste_type_values': json.dumps([round(plastic_total, 2), round(waste_total, 2)]),
+        'waste_type_values': json.dumps([
+            round(plastic_total, 2),
+            round(waste_total, 2)
+        ]),
     }
 
     return render(request, 'dean_dashboard.html', context)

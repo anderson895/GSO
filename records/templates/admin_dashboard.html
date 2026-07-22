@@ -33,14 +33,28 @@
             .layout.sidebar-hidden { grid-template-columns: 0 1fr; }
             .layout.sidebar-hidden .sidebar { width: 0; padding: 0; overflow: hidden; }
             .layout.sidebar-hidden .sidebar * { display: none !important; }
-            .sidebar { padding: 32px 24px; background: var(--sidebar); color: #d1fae5; display: flex; flex-direction: column; gap: 28px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-            .brand { font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 12px; }
-            .brand span { width: 36px; height: 36px; border-radius: 14px; background: rgba(255, 255, 255, 0.12); display: grid; place-items: center; font-weight: 700; }
-            .sidebar p { color: #a7f3d0; line-height: 1.8; margin-bottom: 8px; }
-            .section-title { color: #86efac; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.18em; }
-            .nav-links { display: grid; gap: 10px; }
-            .nav-links a { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; border-radius: 16px; text-decoration: none; color: #d1fae5; background: rgba(255, 255, 255, 0.08); transition: transform 0.2s ease, background 0.2s ease; }
-            .nav-links a:hover, .nav-links a.active { background: rgba(255, 255, 255, 0.12); transform: translateX(2px); }
+            .sidebar { padding: 24px 18px 0; background: linear-gradient(180deg, #14512a 0%, #0f4119 42%, #0e4118 100%); color: #d7ead9; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; overflow-x: hidden; }
+            .sidebar-top { display: flex; align-items: center; }
+            .sidebar-top .sidebar-burger { margin-left: 0; margin-right: auto; background: transparent; border: none; color: #d7ead9; cursor: pointer; padding: 4px; display: inline-flex; border-radius: 8px; transition: background .2s ease; }
+            .sidebar-top .sidebar-burger:hover { background: rgba(255,255,255,0.1); }
+            .brand { display: flex; align-items: center; gap: 10px; }
+            .brand img { width: 82px; height: 82px; object-fit: contain; flex-shrink: 0; }
+            .brand-text { display: flex; flex-direction: column; line-height: 1.16; }
+            .brand-text .b-uni { font-size: 0.64rem; color: #bcdcc2; font-weight: 500; white-space: nowrap; }
+            .brand-text .b-gso { font-size: 2.4rem; font-weight: 800; color: #fff; letter-spacing: .5px; }
+            .brand-text .b-sys { font-size: 0.64rem; color: #cfe6d3; font-weight: 500; white-space: nowrap; }
+            .section-title { color: #7fae86; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.16em; font-weight: 700; margin-bottom: -4px; }
+            .nav-links { display: grid; gap: 6px; }
+            .nav-links a { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 12px; text-decoration: none; color: #d7ead9; background: transparent; font-weight: 500; font-size: 0.97rem; transition: background .2s ease, color .2s ease; }
+            .nav-links a .nav-ico { display: inline-flex; width: 22px; justify-content: center; flex-shrink: 0; }
+            .nav-links a .nav-label { flex: 1; }
+            .nav-links a .nav-chev { opacity: .65; display: inline-flex; }
+            .nav-links a:hover { background: rgba(255,255,255,0.09); }
+            .nav-links a.active { background: #ffffff; color: #17612b; font-weight: 700; box-shadow: 0 8px 20px rgba(0,0,0,0.14); }
+            .nav-links a.active .nav-chev { display: none; }
+            .sidebar-divider { height: 1px; background: rgba(255,255,255,0.13); margin: 6px 4px; }
+            .sidebar-deco { margin-top: auto; margin-left: -18px; margin-right: -18px; }
+            .sidebar-deco img { display: block; width: 100%; }
 
             .main { padding: 16px; }
             .topbar { display: flex; justify-content: space-between; gap: 18px; align-items: center; margin-bottom: 26px; }
@@ -52,10 +66,14 @@
             .profile-btn:hover { transform: translateY(-1px); background: #0d7b3b; }
 
             .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 28px; }
-            .card { background: var(--panel); border-radius: 24px; padding: 24px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
-            .card h3 { margin: 0 0 8px; font-size: 0.95rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
-            .card .value { margin: 0; font-size: 2rem; color: var(--text); }
-            .card .note { margin-top: 10px; color: var(--muted); line-height: 1.7; }
+            .card { position: relative; background: var(--panel); border-radius: 18px; padding: 22px 24px 24px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.10); overflow: hidden; }
+            .card::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 4px; background: #2e8b3d; }
+            .card.accent-orange::after { background: #e97b00; }
+            .card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+            .card-icon { width: 44px; height: 44px; border-radius: 50%; background: #e8f5ec; color: #2e8b3d; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+            .card h3 { margin: 0; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+            .card .value { margin: 0 0 8px; font-size: 2.1rem; color: var(--text); font-weight: 700; }
+            .card .note { margin: 0; color: var(--muted); line-height: 1.6; font-size: 0.9rem; }
 
             .change-card { background: var(--panel); border-radius: 24px; padding: 24px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); display: block; }
             .change-content h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
@@ -69,6 +87,8 @@
             .panel-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; margin-bottom: 22px; }
             .panel-header h2 { margin: 0; font-size: 1.35rem; }
             .panel-subtitle{ margin-top:8px; color:#64748b; font-size:.95rem; }
+            .panel-title-wrap { display: flex; align-items: center; gap: 14px; }
+            .panel-leaf { width: 48px; height: 48px; border-radius: 50%; background: #e8f5ec; color: #2e8b3d; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
             .badge { padding: 10px 14px; border-radius: 999px; background: #d1fae5; color: #0f172a; font-weight: 700; font-size: 0.86rem; }
             
             .trend-filters{ display:flex; gap:20px; align-items:flex-end; }
@@ -94,8 +114,9 @@
             .status-critical { background-color: #991b1b !important; color: white !important; }
 
             .action-links a { display: inline-block; margin-right: 10px; color: var(--primary); font-weight: 700; text-decoration: none; }
-            .logout-btn { width: 100%; padding: 14px 16px; border-radius: 16px; border: none; background: rgba(255, 255, 255, 0.04); color: #d1fae5; cursor: pointer; font-family: inherit; text-align: left; transition: background 0.2s ease, transform 0.2s ease; }
-            .logout-btn:hover { background: rgba(255, 255, 255, 0.12); transform: translateX(2px); }
+            .logout-btn { display: flex; align-items: center; gap: 14px; width: 100%; padding: 13px 16px; border-radius: 12px; border: none; background: transparent; color: #d7ead9; cursor: pointer; font-family: inherit; font-size: 0.97rem; font-weight: 500; text-align: left; transition: background 0.2s ease; }
+            .logout-btn .nav-ico { display: inline-flex; width: 22px; justify-content: center; flex-shrink: 0; }
+            .logout-btn:hover { background: rgba(255, 255, 255, 0.09); }
             .add-btn { border: none; border-radius: 999px; padding: 12px 20px; font-weight: 700; cursor: pointer; background: var(--primary); color: white; transition: transform 0.2s ease, background 0.2s ease; }
             .add-btn:hover { transform: translateY(-1px); }
 
@@ -203,12 +224,14 @@
             .layout.sidebar-collapsed { grid-template-columns: 84px 1fr; }
             .layout.sidebar-collapsed .sidebar { width: 84px; min-width: 84px; padding: 32px 12px; }
             .layout.sidebar-collapsed .sidebar .brand { justify-content: center; }
-            .layout.sidebar-collapsed .sidebar .brand .brand-name { display: none; }
+            .layout.sidebar-collapsed .sidebar .brand .brand-text { display: none; }
             .layout.sidebar-collapsed .sidebar p,
             .layout.sidebar-collapsed .sidebar .section-title,
-            .layout.sidebar-collapsed .sidebar .nav-links,
-            .layout.sidebar-collapsed .sidebar form,
-            .layout.sidebar-collapsed .sidebar .logout-btn { display: none !important; }
+            .layout.sidebar-collapsed .sidebar .section-title,
+            .layout.sidebar-collapsed .sidebar .nav-links .nav-label,
+            .layout.sidebar-collapsed .sidebar .nav-links .nav-chev,
+            .layout.sidebar-collapsed .sidebar .sidebar-deco,
+            .layout.sidebar-collapsed .sidebar .logout-btn .nav-label { display: none !important; }
             @media (max-width: 900px) {
                 .mobile-menu-btn { display: grid; }
                 .layout { grid-template-columns: 1fr; }
@@ -241,43 +264,7 @@
 
     <div class="layout">
 
-        <aside class="sidebar">
-
-            <div class="brand">
-                <img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:40px;height:40px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;">
-                <span class="brand-name">BSU Waste Monitoring</span>
-                <button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button>
-            </div>
-
-            <p>Manage users, areas, reports, thresholds, and system settings.</p>
-
-            <div class="section-title">Main Menu</div>
-
-            <div class="nav-links">
-                <a href="{% url 'admin_dashboard' %}" class="active">Dashboard</a>
-                <a href="{% url 'user_list' %}">User Management</a>
-                <a href="{% url 'area_list' %}">Area Management</a>
-                <a href="{% url 'admin_reports' %}">Reports Summary</a>
-                <a href="{% url 'threshold_settings' %}">Threshold Settings</a>
-                <a href="{% url 'response_guidelines' %}">Response Guidelines</a>
-            </div>
-
-            <div class="section-title">Account</div>
-
-            <div class="nav-links">
-                <a href="{% url 'edit_profile' %}">
-                    Profile Settings
-                </a>
-            </div>
-
-            <form action="{% url 'logout' %}" method="POST" style="width:100%;">
-                {% csrf_token %}
-                <button type="submit" class="logout-btn">
-                    Logout
-                </button>
-            </form>
-
-        </aside>
+        {% include 'partials/admin_sidebar.html' with active='dashboard' %}
 
         <main class="main">
 
@@ -302,25 +289,37 @@
             <div class="cards">
 
                 <div class="card">
-                    <h3>Total Users</h3>
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="2.3"/><circle cx="6.5" cy="9.5" r="2"/><circle cx="17.5" cy="9.5" r="2"/><path d="M8 17c0-2.2 1.8-4 4-4s4 1.8 4 4"/><path d="M3 16.5c.1-1.8 1.4-3.2 3.2-3.4"/><path d="M21 16.5c-.1-1.8-1.4-3.2-3.2-3.4"/></svg></span>
+                        <h3>Total Users</h3>
+                    </div>
                     <p class="value">{{ total_users }}</p>
                     <p class="note">Registered system accounts.</p>
                 </div>
 
-                <div class="card">
-                    <h3>Total Reports</h3>
+                <div class="card accent-orange">
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span>
+                        <h3>Total Reports</h3>
+                    </div>
                     <p class="value">{{ total_records }}</p>
                     <p class="note">Waste reports submitted.</p>
                 </div>
 
                 <div class="card">
-                    <h3>Total Waste</h3>
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4h6v3"/><path d="M10 11v6M14 11v6"/></svg></span>
+                        <h3>Total Waste</h3>
+                    </div>
                     <p class="value">{{ total_waste|floatformat:2 }}</p>
                     <p class="note">Combined waste amount.</p>
                 </div>
 
-                <div class="card">
-                    <h3>Total Campus Areas</h3>
+                <div class="card accent-orange">
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 0 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+                        <h3>Total Campus Areas</h3>
+                    </div>
                     <p class="value">{{ total_areas }}</p>
                     <p class="note">Registered monitoring areas.</p>
                 </div>
@@ -333,11 +332,14 @@
 
             <div class="panel-header">
 
-                <div>
-                    <h2>Waste Trend (University Wide)</h2>
-                    <p class="panel-subtitle">
-                        Overall waste generation trend across all campus areas.
-                    </p>
+                <div class="panel-title-wrap">
+                    <span class="panel-leaf"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20C6 20 4 16 4 11c5 0 7 3 7 9z"/><path d="M13 20c0-7 3-12 8-12 0 7-3 12-8 12z"/><path d="M12 20v-7"/></svg></span>
+                    <div>
+                        <h2>Waste Trend (University Wide)</h2>
+                        <p class="panel-subtitle">
+                            Overall waste generation trend across all campus areas.
+                        </p>
+                    </div>
                 </div>
 
                 <form method="GET" class="trend-filters">

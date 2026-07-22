@@ -14,6 +14,7 @@ from reportlab.platypus import (
     BaseDocTemplate, PageTemplate, Frame, Table, TableStyle,
     Paragraph, Spacer,
 )
+from reportlab.graphics.shapes import Drawing, String, Rect, Line
 
 
 # BSU brand colors
@@ -25,6 +26,13 @@ LEVEL_COLORS = {
     'Moderate': colors.HexColor('#fbbf24'),  # yellow
     'High': colors.HexColor('#f87171'),      # red
     'Critical': colors.HexColor('#991b1b'),  # dark red
+}
+
+LEVEL_ORDER = {
+    'Low': 0,
+    'Moderate': 1,
+    'High': 2,
+    'Critical': 3,
 }
 
 # Text color per level (yellow needs dark text for readability).
@@ -104,7 +112,15 @@ def build_waste_report_pdf(records, report_type, period_label):
     story.append(Paragraph('General Services Office', subtitle_style))
     story.append(Paragraph('Waste Management Summary Report', title_style))
 
-    report_word = 'Monthly Report' if report_type == 'monthly' else 'Yearly Report'
+    if report_type == 'daily':
+        report_word = 'Daily Report'
+    elif report_type == 'weekly':
+        report_word = 'Weekly Report'
+    elif report_type == 'monthly':
+        report_word = 'Monthly Report'
+    else:
+        report_word = 'Yearly Report'
+
     story.append(Paragraph(f'{report_word} &mdash; {period_label}', office_style))
 
     records = list(records)
@@ -129,6 +145,22 @@ def build_waste_report_pdf(records, report_type, period_label):
         f'<b>Total Bags:</b> {total_amount:.0f}',
         summary_style,
     ))
+
+    area_totals = {}
+    area_alerts = {}
+    for record in records:
+        area_name = str(record.area)
+        area_totals[area_name] = area_totals.get(area_name, 0) + (record.amount or 0)
+        current_alert = area_alerts.get(area_name, 'Low')
+        if LEVEL_ORDER.get(record.alert_level, 0) > LEVEL_ORDER.get(current_alert, 0):
+            area_alerts[area_name] = record.alert_level
+
+    if area_totals:
+        sorted_areas = sorted(area_totals.items(), key=lambda x: x[1], reverse=True)
+        top_areas = sorted_areas[:8]
+        labels = [label if len(label) <= 12 else label[:12] + '...' for label, _ in top_areas]
+        values = [[value for _, value in top_areas]]
+        colors_for_bars = [LEVEL_COLORS.get(area_alerts.get(area, 'Low'), BSU_MAROON) for area, _ in top_areas]
 
     # Table
     header = ['Area', 'Waste Type', 'No. of Bags', 'Alert Level',
@@ -193,6 +225,40 @@ def build_waste_report_pdf(records, report_type, period_label):
 
     story.append(table)
     story.append(Spacer(1, 14))
+
+    if area_totals:
+        drawing = Drawing(450, 280)
+        drawing.add(String(225, 255, 'Waste by Area', fontSize=12, textAnchor='middle', fillColor=BSU_MAROON))
+
+        legend_x = 50
+        legend_y = 235
+        for level in ['Low', 'Moderate', 'High', 'Critical']:
+            drawing.add(Rect(legend_x, legend_y, 10, 6, fillColor=LEVEL_COLORS[level], strokeColor=LEVEL_COLORS[level]))
+            drawing.add(String(legend_x + 14, legend_y, level, fontSize=7, fillColor=colors.HexColor('#334155'), textAnchor='start'))
+            legend_x += 70
+
+        max_value = max(values[0]) if values[0] else 1
+        chart_height = 170
+        chart_width = 340
+        chart_x = 50
+        chart_y = 25
+        bar_gap = 12
+        bar_width = min(28, (chart_width - (len(values[0]) - 1) * bar_gap) / len(values[0]))
+
+        drawing.add(Line(chart_x, chart_y, chart_x, chart_y + chart_height, strokeColor=colors.HexColor('#334155')))
+        drawing.add(Line(chart_x, chart_y, chart_x + chart_width, chart_y, strokeColor=colors.HexColor('#334155')))
+
+        for idx, (area_name, amount) in enumerate(top_areas):
+            bar_height = (amount / max_value) * chart_height if max_value else 0
+            bar_x = chart_x + idx * (bar_width + bar_gap)
+            bar_y = chart_y
+            bar_color = LEVEL_COLORS.get(area_alerts.get(area_name, 'Low'), BSU_MAROON)
+            drawing.add(Rect(bar_x, bar_y, bar_width, bar_height, fillColor=bar_color, strokeColor=colors.HexColor('#000000')))
+            drawing.add(String(bar_x + bar_width / 2, bar_y - 10, labels[idx], fontSize=7, fillColor=colors.HexColor('#334155'), textAnchor='middle'))
+            drawing.add(String(bar_x + bar_width / 2, bar_y + bar_height + 4, f'{amount:.0f}', fontSize=7, fillColor=colors.HexColor('#334155'), textAnchor='middle'))
+
+        story.append(drawing)
+        story.append(Spacer(1, 14))
 
     note_style = ParagraphStyle(
         'Note', parent=styles['Normal'], fontSize=7.5,

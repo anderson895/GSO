@@ -161,27 +161,7 @@
     <button type="button" class="mobile-menu-btn" aria-label="Open menu">☰</button>
     <div class="sidebar-overlay"></div>
     <div class="layout">
-        <aside class="sidebar">
-            <div class="brand"><img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:40px;height:40px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;"><span class="brand-name">BSU Waste Mgmt</span><button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button></div>
-            <p>Waste analytics and alert levels for plastic and general waste.</p>
-            <div class="section-title">Main Menu</div>
-            <div class="nav-links">
-                <a href="{% url 'waste_list' %}">Dashboard</a>
-                {% if request.user.profile.role == "Supervisor" %}
-                <a href="{% url 'waste_graphs' %}" class="active">Analytics</a>
-                <a href="{% url 'building_status' %}">Area Monitoring</a>
-                <a href="{% url 'message_dean' %}">Messages{% if critical_college_count %}<span style="background:#ef4444;color:#fff;border-radius:999px;padding:2px 9px;font-size:0.72rem;font-weight:700;">{{ critical_college_count }}</span>{% endif %}</a>
-                {% endif %}
-            </div>
-            <div class="section-title">Account</div>
-            <div class="nav-links">
-                <a href="{% url 'edit_profile' %}">Profile Settings</a>
-            </div>
-            <form action="{% url 'logout' %}" method="POST" style="width: 100%;">
-                {% csrf_token %}
-                <button type="submit" class="logout-btn">Logout</button>
-            </form>
-        </aside>
+        {% include 'partials/staff_sidebar.html' with active='analytics' %}
         <main class="main">
             <div class="topbar">
                 <div>
@@ -280,14 +260,14 @@
                     <div class="metric-item">
                         <div>
                             <span>Average Daily Waste</span>
-                            <strong>{{ average_daily|floatformat:2 }} kg</strong>
+                            <strong>{{ average_daily|floatformat:2 }} bags</strong>
                             <small style="color: var(--muted); font-size: 0.82rem;">Average waste generated per day.</small>
                         </div>
                     </div>
                     <div class="metric-item">
                         <div>
                             <span>Highest Volume (Per Day)</span>
-                            <strong>{{ highest_building_value|floatformat:2 }} kg</strong>
+                            <strong>{{ highest_building_value|floatformat:2 }} bags</strong>
                             <small style="color: var(--muted); font-size: 0.82rem;">Highest recorded waste in a single area.</small>
                         </div>
                     </div>
@@ -331,7 +311,7 @@
             data: {
                 labels,
                 datasets: [{
-                    label: 'Waste Amount',
+                    label: 'Number of Bags',
                     data: totals,
                     backgroundColor: colors,
                     borderWidth: 1,
@@ -343,10 +323,14 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}` } }
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} bags`
+                        }
+                    }
                 },
                 scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Amount (kg)' } },
+                    y: { beginAtZero: true, title: { display: true, text: 'Number of Bags' } },
                     x: { title: { display: true, text: 'College / Area' }, ticks: { autoSkip: false, maxRotation: 40, minRotation: 0 } }
                 }
             }
@@ -383,7 +367,7 @@
                     legend: { display: true, labels: { font: { size: 12 } } },
                     tooltip: {
                         callbacks: {
-                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} kg`
+                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} bags`
                         },
                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         padding: 12,
@@ -393,7 +377,7 @@
                 scales: {
                     y: { 
                         beginAtZero: true, 
-                        title: { display: true, text: 'Amount (kg)' },
+                        title: { display: true, text: 'Number of Bags' },
                         ticks: { callback: value => value.toFixed(1) }
                     },
                     x: {

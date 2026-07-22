@@ -282,43 +282,7 @@
 
     <div class="layout">
 
-        <aside class="sidebar">
-
-            <div class="brand">
-                <img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:40px;height:40px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;">
-                <span class="brand-name">BSU Waste Monitoring</span>
-                <button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button>
-            </div>
-
-            <p>Manage users, areas, reports, thresholds, and system settings.</p>
-
-            <div class="section-title">Main Menu</div>
-
-            <div class="nav-links">
-                <a href="{% url 'admin_dashboard' %}" class="active">Dashboard</a>
-                <a href="{% url 'user_list' %}">User Management</a>
-                <a href="{% url 'area_list' %}">Area Management</a>
-                <a href="{% url 'admin_reports' %}">Reports Summary</a>
-                <a href="{% url 'threshold_settings' %}">Threshold Settings</a>
-                <a href="{% url 'response_guidelines' %}">Response Guidelines</a>
-            </div>
-
-            <div class="section-title">Account</div>
-
-            <div class="nav-links">
-                <a href="{% url 'edit_profile' %}">
-                    Profile Settings
-                </a>
-            </div>
-
-            <form action="{% url 'logout' %}" method="POST" style="width:100%;">
-                {% csrf_token %}
-                <button type="submit" class="logout-btn">
-                    Logout
-                </button>
-            </form>
-
-        </aside>
+        {% include 'partials/admin_sidebar.html' with active='reports' %}
 
         <main class="main">
 
@@ -353,37 +317,49 @@
                             <label><strong>Report Type</strong></label>
 
                             <select name="report_type" id="report_type">
-                                <option value="monthly">Monthly</option>
-                                <option value="yearly">Yearly</option>
-                            </select>
-                        </p>
-
-                        <p id="month_container">
-                            <label><strong>Month</strong></label>
-
-                            <select name="month">
-                                <option value="1">January</option>
-                                <option value="2">February</option>
-                                <option value="3">March</option>
-                                <option value="4">April</option>
-                                <option value="5">May</option>
-                                <option value="6">June</option>
-                                <option value="7">July</option>
-                                <option value="8">August</option>
-                                <option value="9">September</option>
-                                <option value="10">October</option>
-                                <option value="11">November</option>
-                                <option value="12">December</option>
+                                <option value="daily" {% if selected_report_type == 'daily' %}selected{% endif %}>Daily</option>
+                                <option value="weekly" {% if selected_report_type == 'weekly' %}selected{% endif %}>Weekly</option>
+                                <option value="monthly" {% if selected_report_type == 'monthly' %}selected{% endif %}>Monthly</option>
+                                <option value="yearly" {% if selected_report_type == 'yearly' %}selected{% endif %}>Yearly</option>
                             </select>
                         </p>
 
                         <p>
                             <label><strong>Year</strong></label>
+                            <select name="year" id="year_select">
+                                {% for year in available_years %}
+                                    <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </p>
 
-                            <input type="number"
-                                name="year"
-                                placeholder="e.g. {{ default_year }}"
-                                value="{{ request.GET.year|default:default_year }}">
+                        <p id="month_container">
+                            <label><strong>Month</strong></label>
+                            <select name="month" id="month_select">
+                                {% for month_num, month_name in month_choices %}
+                                    {% if month_num in available_months %}
+                                        <option value="{{ month_num }}" {% if selected_month == month_num %}selected{% endif %}>{{ month_name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </p>
+
+                        <p id="week_container">
+                            <label><strong>Week</strong></label>
+                            <select name="week" id="week_select">
+                                {% for week_num in available_weeks %}
+                                    <option value="{{ week_num }}" {% if selected_week == week_num %}selected{% endif %}>Week {{ week_num }}</option>
+                                {% endfor %}
+                            </select>
+                        </p>
+
+                        <p id="day_container">
+                            <label><strong>Day</strong></label>
+                            <select name="day" id="day_select">
+                                {% for day_num in available_days %}
+                                    <option value="{{ day_num }}" {% if selected_day == day_num %}selected{% endif %}>{{ day_num }}</option>
+                                {% endfor %}
+                            </select>
                         </p>
 
                         <button type="submit" class="add-btn">
@@ -402,7 +378,7 @@
                     <h2>Report Preview</h2>
 
                     {% if records %}
-                    <a href="{% url 'export_pdf' %}?report_type={{ request.GET.report_type }}&month={{ request.GET.month }}&year={{ request.GET.year }}"
+                    <a href="{% url 'export_pdf' %}?report_type={{ request.GET.report_type }}&month={{ request.GET.month }}&week={{ request.GET.week }}&day={{ request.GET.day }}&year={{ request.GET.year }}"
                     class="profile-btn">
                         Export PDF
                     </a>
@@ -583,27 +559,63 @@
 
     <script>
 
-    function toggleMonthField() {
+    const monthChoices = {{ json_month_choices|safe }};
+    const monthsByYear = {{ json_months_by_year|safe }};
+    const daysByYearMonth = {{ json_days_by_year_month|safe }};
+    const weeksByYearMonth = {{ json_weeks_by_year_month|safe }};
 
-        const reportType =
-            document.getElementById('report_type').value;
+    function updateRelatedDropdowns() {
+        const selectedYear = parseInt(document.getElementById('year_select').value, 10);
+        const selectedMonth = parseInt(document.getElementById('month_select').value, 10);
+        const monthSelect = document.getElementById('month_select');
+        const daySelect = document.getElementById('day_select');
+        const weekSelect = document.getElementById('week_select');
+        const monthKey = `${selectedYear}-${selectedMonth}`;
 
-        const monthContainer =
-            document.getElementById('month_container');
+        const availableMonths = monthsByYear[selectedYear] || [];
+        monthSelect.innerHTML = availableMonths.map(monthNum => {
+            const monthName = monthChoices.find(([num]) => num === monthNum)?.[1] || monthNum;
+            return `<option value="${monthNum}" ${monthNum === selectedMonth ? 'selected' : ''}>${monthName}</option>`;
+        }).join('');
+
+        const availableDays = daysByYearMonth[monthKey] || [];
+        daySelect.innerHTML = availableDays.map(dayNum => `<option value="${dayNum}">${dayNum}</option>`).join('');
+
+        const availableWeeks = weeksByYearMonth[monthKey] || [];
+        weekSelect.innerHTML = availableWeeks.map(weekNum => `<option value="${weekNum}">Week ${weekNum}</option>`).join('');
+    }
+
+    function toggleFieldsByReportType() {
+        const reportType = document.getElementById('report_type').value;
+        const monthContainer = document.getElementById('month_container');
+        const weekContainer = document.getElementById('week_container');
+        const dayContainer = document.getElementById('day_container');
 
         if (reportType === 'yearly') {
             monthContainer.style.display = 'none';
-        }
-
-        else {
+            weekContainer.style.display = 'none';
+            dayContainer.style.display = 'none';
+        } else if (reportType === 'monthly') {
             monthContainer.style.display = 'block';
+            weekContainer.style.display = 'none';
+            dayContainer.style.display = 'none';
+        } else if (reportType === 'weekly') {
+            monthContainer.style.display = 'block';
+            weekContainer.style.display = 'block';
+            dayContainer.style.display = 'none';
+        } else {
+            monthContainer.style.display = 'block';
+            weekContainer.style.display = 'none';
+            dayContainer.style.display = 'block';
         }
     }
 
-    document.getElementById('report_type')
-        .addEventListener('change', toggleMonthField);
+    document.getElementById('year_select').addEventListener('change', updateRelatedDropdowns);
+    document.getElementById('month_select').addEventListener('change', updateRelatedDropdowns);
+    document.getElementById('report_type').addEventListener('change', toggleFieldsByReportType);
 
-    toggleMonthField();
+    updateRelatedDropdowns();
+    toggleFieldsByReportType();
 
     </script>
 

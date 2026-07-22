@@ -160,27 +160,7 @@
     <button type="button" class="mobile-menu-btn" aria-label="Open menu">☰</button>
     <div class="sidebar-overlay"></div>
     <div class="layout">
-        <aside class="sidebar">
-            <div class="brand"><img src="{% static 'images/bsu-logo.png' %}" alt="BSU Logo" style="width:40px;height:40px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;"><span class="brand-name">BSU Waste Mgmt</span><button type="button" class="sidebar-collapse" aria-label="Toggle sidebar">＜</button></div>
-            <p>Monitor waste trends, photos, and alert levels per area.</p>
-            <div class="section-title">Main Menu</div>
-            <div class="nav-links">
-                <a href="{% url 'waste_list' %}">Dashboard</a>
-                {% if request.user.profile.role == "Supervisor" %}
-                <a href="{% url 'waste_graphs' %}">Analytics</a>
-                <a href="{% url 'building_status' %}" class="active">Area Monitoring</a>
-                <a href="{% url 'message_dean' %}">Messages{% if critical_college_count %}<span style="background:#ef4444;color:#fff;border-radius:999px;padding:2px 9px;font-size:0.72rem;font-weight:700;">{{ critical_college_count }}</span>{% endif %}</a>
-                {% endif %}
-            </div>
-            <div class="section-title">Account</div>
-            <div class="nav-links">
-                <a href="{% url 'edit_profile' %}">Profile Settings</a>
-            </div>
-            <form action="{% url 'logout' %}" method="POST" style="width: 100%;">
-                {% csrf_token %}
-                <button type="submit" class="logout-btn">Logout</button>
-            </form>
-        </aside>
+        {% include 'partials/staff_sidebar.html' with active='monitoring' %}
         <main class="main">
             <div class="topbar">
                 <div>
