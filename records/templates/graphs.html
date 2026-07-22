@@ -48,10 +48,16 @@
         .topbar .user-chip { display: inline-flex; align-items: center; gap: 10px; background: var(--panel); padding: 14px 18px; border-radius: 18px; box-shadow: var(--shadow); }
         .topbar .user-chip img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
         .cards-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .card { background: var(--panel); border-radius: 24px; padding: 26px; box-shadow: var(--shadow); border: 1px solid rgba(16, 185, 129, 0.12); }
-        .card h4 { margin: 0 0 10px; font-size: 0.92rem; letter-spacing: 0.04em; color: var(--muted); text-transform: uppercase; }
-        .card .value { font-size: 2.1rem; margin: 0; color: var(--text); }
-        .card .note { color: var(--muted); margin-top: 12px; font-size: 0.95rem; line-height: 1.65; }
+        .card { position: relative; background: var(--panel); border-radius: 18px; padding: 22px 24px 24px; box-shadow: var(--shadow); border: 1px solid rgba(16, 185, 129, 0.10); overflow: hidden; }
+        .card::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 4px; background: #2e8b3d; }
+        .card.accent-orange::after { background: #e97b00; }
+        .card.warn::after { background: #dc2626; }
+        .card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .card-icon { width: 44px; height: 44px; border-radius: 50%; background: #e8f5ec; color: #2e8b3d; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .card.warn .card-icon { background: #fdecec; color: #dc2626; }
+        .card-top h4 { margin: 0; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+        .card .value { font-size: 2.1rem; margin: 0 0 6px; color: var(--text); font-weight: 700; }
+        .card .note { color: var(--muted); margin: 0; font-size: 0.9rem; line-height: 1.6; }
         .highlight { color: var(--primary); }
         .chart-panel { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
         .large-panel, .small-panel { background: var(--panel); border-radius: 28px; padding: 28px; box-shadow: var(--shadow); border: 1px solid rgba(16, 185, 129, 0.12); }
@@ -179,22 +185,34 @@
 
             <div class="cards-grid">
                 <div class="card">
-                    <h4>Total Waste ({{ period_title }})</h4>
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4h6v3"/><path d="M10 11v6M14 11v6"/></svg></span>
+                        <h4>Total Waste ({{ period_title }})</h4>
+                    </div>
                     <p class="value">{{ period_total|floatformat:2 }}</p>
                     <p class="note">Total amount for selected period and category.</p>
                 </div>
-                <div class="card">
-                    <h4>All-Time Waste</h4>
+                <div class="card accent-orange">
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M8 16v-4M12 16v-7M16 16v-2"/></svg></span>
+                        <h4>All-Time Waste</h4>
+                    </div>
                     <p class="value">{{ all_time_total|floatformat:2 }}</p>
                     <p class="note">All-time total for selected area or all areas.</p>
                 </div>
                 <div class="card">
-                    <h4>Highest Area</h4>
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 0 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+                        <h4>Highest Area</h4>
+                    </div>
                     <p class="value">{{ highest_building }}</p>
                     <p class="note">Area with the greatest amount in the selected period.</p>
                 </div>
-                <div class="card">
-                    <h4>Critical Reports</h4>
+                <div class="card warn">
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg></span>
+                        <h4>Critical Reports</h4>
+                    </div>
                     <p class="value">{{ critical_count }}</p>
                     <p class="note">Number of Critical alerts in the selected dataset.</p>
                 </div>

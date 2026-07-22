@@ -73,7 +73,12 @@
 
             .form-card { background: #f7fbf6; border-radius: 24px; padding: 28px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
             .form-card form { display: grid; gap: 18px; }
-            .form-card input, .form-card select { width: 100%; padding: 14px 16px; border-radius: 14px; border: 1px solid #d1d5db; background: #ffffff; }
+            .form-card input, .form-card select, .form-card textarea { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid #d9e2dc; background: #ffffff; font-family: inherit; font-size: 0.95rem; color: var(--text); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+            .form-card textarea { resize: vertical; min-height: 96px; line-height: 1.6; }
+            .form-card input:focus, .form-card select:focus, .form-card textarea:focus { outline: none; border-color: #2e8b3d; box-shadow: 0 0 0 4px rgba(46, 139, 61, 0.12); }
+            td select { padding: 9px 12px; border-radius: 8px; border: 1px solid #d9e2dc; background: #ffffff; font-family: inherit; font-size: 0.9rem; color: var(--text); cursor: pointer; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+            td select:hover { border-color: #b7d3bd; }
+            td select:focus { outline: none; border-color: #2e8b3d; box-shadow: 0 0 0 3px rgba(46, 139, 61, 0.12); }
             .form-card button { width: fit-content; }
 
             .table-wrapper { overflow-x: auto; }
@@ -89,7 +94,11 @@
             .status-critical { background-color: #991b1b !important; color: white !important; }
 
             .action-links{ display:flex;  gap:8px; } 
-            .action-links a{ color:var(--primary);  font-weight:700;  text-decoration:none; }
+            .action-links { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+            .action-links a { display:inline-flex; align-items:center; justify-content:center; padding:8px 18px; border-radius:8px; font-weight:600; font-size:0.88rem; text-decoration:none; border:1px solid #cfe8d6; background:#e8f5ec; color:#17612b; cursor:pointer; transition:background 0.2s ease,color 0.2s ease,border-color 0.2s ease; margin:0; }
+            .action-links a:hover { background:#2e8b3d; color:#ffffff; border-color:#2e8b3d; }
+            .action-links a[href*="delete"] { background:#fdecec; color:#c0392b; border-color:#f5cfcf; }
+            .action-links a[href*="delete"]:hover { background:#dc2626; color:#ffffff; border-color:#dc2626; }
             .logout-btn { width: 100%; padding: 14px 16px; border-radius: 16px; border: none; background: rgba(255, 255, 255, 0.04); color: #d1fae5; cursor: pointer; font-family: inherit; text-align: left; transition: background 0.2s ease, transform 0.2s ease; }
             .logout-btn:hover { background: rgba(255, 255, 255, 0.12); transform: translateX(2px); }
             .add-btn { border: none; border-radius: 999px; padding: 12px 20px; font-weight: 700; cursor: pointer; background: var(--primary); color: white; transition: transform 0.2s ease, background 0.2s ease; }

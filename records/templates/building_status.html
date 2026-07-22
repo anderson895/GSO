@@ -42,6 +42,16 @@
         .card h4 { margin: 0 0 12px; font-size: 0.95rem; letter-spacing: 0.05em; color: var(--muted); text-transform: uppercase; }
         .card .value { margin: 0; font-size: 2.1rem; color: var(--text); }
         .card .note { color: var(--muted); margin-top: 14px; font-size: 0.96rem; line-height: 1.75; }
+        .cards-grid .card { position: relative; border-radius: 18px; padding: 22px 24px 24px; overflow: hidden; }
+        .cards-grid .card::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 4px; background: #2e8b3d; }
+        .cards-grid .card.accent-orange::after { background: #e97b00; }
+        .cards-grid .card.warn::after { background: #dc2626; }
+        .card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .card-icon { width: 44px; height: 44px; border-radius: 50%; background: #e8f5ec; color: #2e8b3d; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .card.warn .card-icon { background: #fdecec; color: #dc2626; }
+        .card-top h4 { margin: 0; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+        .cards-grid .card .value { margin: 0 0 6px; font-weight: 700; }
+        .cards-grid .card .note { margin-top: 0; font-size: 0.9rem; line-height: 1.6; }
         .filter-panel { display: grid; gap: 14px; margin-bottom: 28px; }
         .filter-panel form { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
         .filter-panel select, .filter-panel button { border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.16); padding: 12px 18px; background: var(--panel); cursor: pointer; font-weight: 700; }
@@ -172,25 +182,37 @@
             <div class="cards-grid">
 
                 <div class="card">
-                    <h4>Selected Area</h4>
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.5 7-11a7 7 0 0 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+                        <h4>Selected Area</h4>
+                    </div>
                     <p class="value">{{ selected_area }}</p>
                     <p class="note">Area currently being monitored.</p>
                 </div>
 
-                <div class="card">
-                    <h4>Total Amount</h4>
+                <div class="card accent-orange">
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4h6v3"/><path d="M10 11v6M14 11v6"/></svg></span>
+                        <h4>Total Amount</h4>
+                    </div>
                     <p class="value">{{ selected_total|floatformat:2 }}</p>
                     <p class="note">Total for the selected area and category.</p>
                 </div>
 
                 <div class="card">
-                    <h4>Report Count</h4>
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span>
+                        <h4>Report Count</h4>
+                    </div>
                     <p class="value">{{ selected_count }}</p>
                     <p class="note">Number of reports displayed for the selection.</p>
                 </div>
 
-                <div class="card">
-                    <h4>High / Critical</h4>
+                <div class="card warn">
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg></span>
+                        <h4>High / Critical</h4>
+                    </div>
                     <p class="value">{{ high_count|add:critical_count }}</p>
                     <p class="note">Count of significant alerts in the filter set.</p>
                 </div>

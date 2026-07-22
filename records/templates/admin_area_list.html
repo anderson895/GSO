@@ -74,6 +74,10 @@
             .form-card { background: #f7fbf6; border-radius: 24px; padding: 28px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
             .form-card form { display: grid; gap: 18px; }
             .form-card input, .form-card select { width: 100%; padding: 14px 16px; border-radius: 14px; border: 1px solid #d1d5db; background: #ffffff; }
+            td select { padding: 9px 12px; border-radius: 8px; border: 1px solid #d9e2dc; background: #ffffff; font-family: inherit; font-size: 0.9rem; color: var(--text); cursor: pointer; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+            td select:hover { border-color: #b7d3bd; }
+            td select:focus { outline: none; border-color: #2e8b3d; box-shadow: 0 0 0 3px rgba(46, 139, 61, 0.12); }
+            td form { margin: 0; }
             .form-card button { width: fit-content; }
 
             .table-wrapper { overflow-x: auto; }
@@ -88,8 +92,12 @@
             .status-high { background-color: #f87171 !important; color: white !important; }
             .status-critical { background-color: #991b1b !important; color: white !important; }
 
-            .action-links{ display:flex;  gap:8px; } 
-            .action-links a{ color:var(--primary);  font-weight:700;  text-decoration:none; }
+            .action-links{ display:flex; gap:10px; align-items:center; }
+            .action-links a{ display:inline-flex; align-items:center; justify-content:center; padding:8px 18px; border-radius:8px; font-weight:600; font-size:0.88rem; text-decoration:none; border:1px solid transparent; cursor:pointer; transition:background 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+            .action-links a.edit-btn{ background:#e8f5ec; color:#17612b; border-color:#cfe8d6; }
+            .action-links a.edit-btn:hover{ background:#2e8b3d; color:#ffffff; border-color:#2e8b3d; }
+            .action-links a.delete-btn{ background:#fdecec; color:#c0392b; border-color:#f5cfcf; }
+            .action-links a.delete-btn:hover{ background:#dc2626; color:#ffffff; border-color:#dc2626; }
             .logout-btn { width: 100%; padding: 14px 16px; border-radius: 16px; border: none; background: rgba(255, 255, 255, 0.04); color: #d1fae5; cursor: pointer; font-family: inherit; text-align: left; transition: background 0.2s ease, transform 0.2s ease; }
             .logout-btn:hover { background: rgba(255, 255, 255, 0.12); transform: translateX(2px); }
             .add-btn { border: none; border-radius: 999px; padding: 12px 20px; font-weight: 700; cursor: pointer; background: var(--primary); color: white; transition: transform 0.2s ease, background 0.2s ease; }
@@ -298,8 +306,8 @@
                                     <td data-label="Actions">
 
                                         <div class="action-links">
-                                            <a href="{% url 'edit_area' area.id %}">  Edit  </a>
-                                            <a href="{% url 'delete_area' area.id %}" onclick="
+                                            <a class="edit-btn" href="{% url 'edit_area' area.id %}">Edit</a>
+                                            <a class="delete-btn" href="{% url 'delete_area' area.id %}" onclick="
                                             return confirm( 'Warning:\n\nDeleting an Area may affect existing records, historical reports, and analytics.\n\nPlease ensure that this area does not contain important data before proceeding.\n\nPress OK to continue deleting or Cancel to check first.' );
                                             ">
                                                 Delete
