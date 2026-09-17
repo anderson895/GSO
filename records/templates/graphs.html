@@ -47,7 +47,7 @@
         .topbar h1 { margin: 0; font-size: 2rem; }
         .topbar .user-chip { display: inline-flex; align-items: center; gap: 10px; background: var(--panel); padding: 14px 18px; border-radius: 18px; box-shadow: var(--shadow); }
         .topbar .user-chip img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-        .cards-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .cards-grid{ display:grid; grid-template-columns: repeat(auto-fit,minmax(250px,1fr)); gap:20px; margin-bottom:30px; }
         .card { position: relative; background: var(--panel); border-radius: 18px; padding: 22px 24px 24px; box-shadow: var(--shadow); border: 1px solid rgba(16, 185, 129, 0.10); overflow: hidden; }
         .card::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 4px; background: #2e8b3d; }
         .card.accent-orange::after { background: #e97b00; }
@@ -65,7 +65,7 @@
         .panel-header h2 { margin: 0; font-size: 1.15rem; }
         .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(20, 152, 79, 0.12); color: var(--success); font-weight: 600; font-size: 0.85rem; }
         .chart-wrap { margin-top: 22px; position: relative; height: 340px; width: 100%; }
-        .chart-wrap canvas { width: 100% !important; height: 100% !important; }
+        .chart-wrap canvas { width: 100% !important; height: auto !important; max-width: 100%; }
         .chart-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; background: rgba(255,255,255,0.72); border-radius: 16px; pointer-events: none; }
         .chart-empty strong { font-size: 1.05rem; color: var(--text); }
         .chart-empty span { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
@@ -87,8 +87,12 @@
         .legend-item { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text); font-weight: 600; }
         .legend-swatch { width: 16px; height: 16px; border-radius: 5px; display: inline-block; }
 
-        @media (max-width: 1120px) { .chart-panel { grid-template-columns: 1fr; } .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 860px) { .sidebar { width: 240px; padding: 24px 18px; } .main { padding: 20px; } }
+        @media (max-width: 1120px) { 
+            .chart-panel { grid-template-columns: 1fr; }
+            .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 860px) { 
+            .sidebar { width: 240px; padding: 24px 18px; } 
+            .main { padding: 20px; } }
         @media (max-width: 760px) {
             .layout { grid-template-columns: 1fr; }
             .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; padding: 20px; transform: translateX(-100%); transition: transform 0.3s ease; z-index: 40; }
@@ -161,10 +165,20 @@
             .layout.sidebar-collapsed { grid-template-columns: 1fr; }
             .layout.sidebar-collapsed .sidebar { width: 280px; min-width: auto; padding: 24px 18px; }
         }
+        @media(max-width:480px){
+            .main{ padding:15px; }
+            .large-panel{ padding:18px; }
+            .small-panel{ padding:18px; }
+            .card{ padding:18px;}
+            .topbar h1{ font-size:1.3rem; }
+            .chart-wrap{ height:220px; }
+            .graph-filter{ min-width:100%;}
+
+}
 </style>
 </head>
 <body>
-    <button type="button" class="mobile-menu-btn" aria-label="Open menu">☰</button>
+    <button type="button" class="mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="app-sidebar">☰</button>
     <div class="sidebar-overlay"></div>
     <div class="layout">
         {% include 'partials/staff_sidebar.html' with active='analytics' %}
@@ -184,21 +198,21 @@
             </div>
 
             <div class="cards-grid">
-                <div class="card">
-                    <div class="card-top">
-                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4h6v3"/><path d="M10 11v6M14 11v6"/></svg></span>
-                        <h4>Total Waste ({{ period_title }})</h4>
-                    </div>
-                    <p class="value">{{ period_total|floatformat:2 }}</p>
-                    <p class="note">Total amount for selected period and category.</p>
-                </div>
                 <div class="card accent-orange">
                     <div class="card-top">
                         <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v16h16"/><path d="M8 16v-4M12 16v-7M16 16v-2"/></svg></span>
                         <h4>All-Time Waste</h4>
                     </div>
-                    <p class="value">{{ all_time_total|floatformat:2 }}</p>
+                    <p class="value">{{ all_time_total|floatformat:0 }}</p>
                     <p class="note">All-time total for selected area or all areas.</p>
+                </div>
+                <div class="card">
+                    <div class="card-top">
+                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4h6v3"/><path d="M10 11v6M14 11v6"/></svg></span>
+                        <h4>Total Waste ({{ period_title }})</h4>
+                    </div>
+                    <p class="value">{{ period_total|floatformat:0 }}</p>
+                    <p class="note">Total amount for selected period and category.</p>
                 </div>
                 <div class="card">
                     <div class="card-top">
@@ -231,7 +245,6 @@
                             <option value="weekly" {% if period == 'weekly' %}selected{% endif %}>Weekly</option>
                             <option value="monthly" {% if period == 'monthly' %}selected{% endif %}>Monthly</option>
                             <option value="yearly" {% if period == 'yearly' %}selected{% endif %}>Yearly</option>
-                            <option value="all" {% if period == 'all' %}selected{% endif %}>All Time</option>
                         </select>
                     </div>
                     <div class="graph-filter">
@@ -260,7 +273,7 @@
                     {% if not has_area_data %}
                     <div class="chart-empty">
                         <strong>No data for this selection.</strong>
-                        <span>No records match the selected <b>{{ period_title }}</b> period, category, or area.<br>Try switching Time Period to <b>Yearly</b> or <b>All Time</b>.</span>
+                        <span>No records match the selected <b>{{ period_title }}</b> period, category, or area.<br>Try switching Time Period to <b>Yearly</b>.</span>
                     </div>
                     {% endif %}
                 </div>
@@ -295,14 +308,21 @@
             <div class="large-panel" style="margin-top: 28px;">
                 <div class="panel-header">
                     <h2>Waste Trend</h2>
-                    <span class="badge">{{ line_title }}</span>
                 </div>
-                <div class="filter-buttons">
-                    <button type="button" onclick="location.href='?period={{ period }}&category={{ category }}&line_period=yesterday&area={{ selected_area|urlencode }}'" class="{% if line_period == 'yesterday' %}active{% endif %}">Yesterday</button>
-                    <button type="button" onclick="location.href='?period={{ period }}&category={{ category }}&line_period=last_week&area={{ selected_area|urlencode }}'" class="{% if line_period == 'last_week' %}active{% endif %}">Last Week</button>
-                    <button type="button" onclick="location.href='?period={{ period }}&category={{ category }}&line_period=last_month&area={{ selected_area|urlencode }}'" class="{% if line_period == 'last_month' %}active{% endif %}">Last Month</button>
-                    <button type="button" onclick="location.href='?period={{ period }}&category={{ category }}&line_period=yearly&area={{ selected_area|urlencode }}'" class="{% if line_period == 'yearly' %}active{% endif %}">Yearly</button>
-                </div>
+                <form method="get" class="graph-filter-bar">
+                    <div class="graph-filter">
+                        <label>Trend Range</label>
+                        <select name="line_period" onchange="this.form.submit()">
+                            <option value="daily" {% if line_period == 'daily' %}selected{% endif %}>Daily</option>
+                            <option value="weekly" {% if line_period == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if line_period == 'monthly' %}selected{% endif %}>Monthly</option>
+                            <option value="yearly" {% if line_period == 'yearly' %}selected{% endif %}>Yearly</option>
+                        </select>
+                    </div>
+                    <input type="hidden" name="period" value="{{ period }}">
+                    <input type="hidden" name="category" value="{{ category }}">
+                    <input type="hidden" name="area" value="{{ selected_area }}">
+                </form>
                 <div class="chart-wrap">
                     <canvas id="trendChart"></canvas>
                     {% if not has_trend_data %}
@@ -411,31 +431,58 @@
             var overlay = document.querySelector('.sidebar-overlay');
             var menuButton = document.querySelector('.mobile-menu-btn');
             var collapseButton = document.querySelector('.sidebar-collapse');
+            var sidebarLinks = document.querySelectorAll('.sidebar a');
+
+            function setMobileSidebar(open) {
+                if (!layout) return;
+                layout.classList.toggle('sidebar-mobile-open', open);
+                if (overlay) {
+                    overlay.classList.toggle('active', open);
+                    overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+                }
+                if (menuButton) {
+                    menuButton.classList.toggle('hidden', open);
+                    menuButton.setAttribute('aria-expanded', String(open));
+                }
+            }
 
             if (menuButton && layout) {
                 menuButton.addEventListener('click', function() {
-                    layout.classList.add('sidebar-mobile-open');
-                    menuButton.classList.add('hidden');
+                    setMobileSidebar(!layout.classList.contains('sidebar-mobile-open'));
                 });
             }
 
             if (overlay && layout) {
                 overlay.addEventListener('click', function() {
-                    layout.classList.remove('sidebar-mobile-open');
-                    menuButton.classList.remove('hidden');
+                    setMobileSidebar(false);
                 });
             }
 
+            sidebarLinks.forEach(function(link) {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 900) {
+                        setMobileSidebar(false);
+                    }
+                });
+            });
+
             if (collapseButton && layout) {
                 collapseButton.addEventListener('click', function() {
-                    if (layout.classList.contains('sidebar-mobile-open')) {
-                        layout.classList.remove('sidebar-mobile-open');
-                        menuButton.classList.remove('hidden');
+                    if (window.innerWidth <= 900) {
+                        setMobileSidebar(false);
                     } else {
                         layout.classList.toggle('sidebar-collapsed');
                     }
                 });
             }
+
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 900) {
+                    setMobileSidebar(false);
+                }
+            });
+
+            setMobileSidebar(false);
         });
     </script>
 </body>

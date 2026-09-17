@@ -15,18 +15,23 @@ from reportlab.platypus import (
     Paragraph, Spacer,
 )
 from reportlab.graphics.shapes import Drawing, String, Rect, Line
+from reportlab.pdfbase.pdfmetrics import stringWidth
 
 
 # BSU brand colors
 BSU_MAROON = colors.HexColor('#7a1420')
 BSU_GOLD = colors.HexColor('#f2a900')
 
-LEVEL_COLORS = {
-    'Low': colors.HexColor('#16a34a'),       # green
-    'Moderate': colors.HexColor('#fbbf24'),  # yellow
-    'High': colors.HexColor('#f87171'),      # red
-    'Critical': colors.HexColor('#991b1b'),  # dark red
+# Must stay in step with STATUS_LEVEL_COLORS in views.py so the exported PDF
+# uses the same colours as the on-screen report preview.
+LEVEL_HEX = {
+    'Low': '#16a34a',       # green
+    'Moderate': '#fbbf24',  # yellow
+    'High': '#f87171',      # red
+    'Critical': '#991b1b',  # dark red
 }
+
+LEVEL_COLORS = {level: colors.HexColor(hex_value) for level, hex_value in LEVEL_HEX.items()}
 
 LEVEL_ORDER = {
     'Low': 0,
@@ -59,7 +64,155 @@ def _draw_letterhead(canvas, doc):
         )
 
 
-def build_waste_report_pdf(records, report_type, period_label):
+def _legend_entry_width(item, font_size):
+    """Width one 'Level (range)' entry needs to stay on a single line."""
+
+    return (
+        stringWidth(item['level'] + ' ', 'Helvetica-Bold', font_size)
+        + stringWidth(f"({item['range']})", 'Helvetica', font_size)
+    )
+
+
+def _legend_font_size(level_legend, available_width):
+    """Largest font size that keeps every legend entry on one line."""
+
+    for font_size in (7, 6.5, 6, 5.5):
+        needed = sum(_legend_entry_width(item, font_size) for item in level_legend)
+        if needed <= available_width:
+            return font_size
+
+    return 5.5
+
+
+def _legend_flowable(level_legend, total_width, styles):
+    """The 'Alert Levels' strip shown above the table in the report preview."""
+
+    label_width = 62
+    swatch_width = 9
+    cell_padding = 6  # LEFTPADDING + RIGHTPADDING on each text cell
+
+    entries = len(level_legend)
+    text_space = (
+        total_width - label_width - entries * (swatch_width + cell_padding)
+    )
+    font_size = _legend_font_size(level_legend, text_space)
+
+    # Give each entry the width its own text needs; share the slack evenly.
+    # If even the smallest font overflows, scale the columns down together so
+    # the wrapping is spread across entries instead of crushing the short ones.
+    needed = [_legend_entry_width(item, font_size) for item in level_legend]
+    if sum(needed) <= text_space:
+        slack = (text_space - sum(needed)) / entries
+        text_widths = [width + slack for width in needed]
+    else:
+        scale = text_space / sum(needed)
+        text_widths = [width * scale for width in needed]
+
+    label_style = ParagraphStyle(
+        'LegendLabel', parent=styles['Normal'], fontSize=font_size, leading=font_size + 1.5,
+        textColor=colors.HexColor('#4b5563'), fontName='Helvetica-Bold',
+    )
+    text_style = ParagraphStyle(
+        'LegendText', parent=styles['Normal'], fontSize=font_size, leading=font_size + 1.5,
+        textColor=colors.HexColor('#0f172a'),
+    )
+
+    row = [Paragraph('ALERT LEVELS', label_style)]
+    widths = [label_width]
+    cmds = [
+        ('BOX', (0, 0), (-1, -1), 0.6, colors.HexColor('#cfe3d6')),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f7fbf6')),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
+    ]
+
+    for index, item in enumerate(level_legend):
+        swatch_col = len(row)
+        row.append('')
+        row.append(Paragraph(
+            f"<b>{item['level']}</b> "
+            f"<font color='#64748b'>({item['range']})</font>",
+            text_style,
+        ))
+        widths += [swatch_width, text_widths[index] + cell_padding]
+        cmds.append(('BACKGROUND', (swatch_col, 0), (swatch_col, 0),
+                     colors.HexColor(item['color'])))
+        cmds.append(('TOPPADDING', (swatch_col, 0), (swatch_col, 0), 4))
+        cmds.append(('BOTTOMPADDING', (swatch_col, 0), (swatch_col, 0), 4))
+        cmds.append(('LEFTPADDING', (swatch_col, 0), (swatch_col, 0), 0))
+        cmds.append(('RIGHTPADDING', (swatch_col, 0), (swatch_col, 0), 0))
+
+    table = Table([row], colWidths=widths)
+    table.setStyle(TableStyle(cmds))
+    return table
+
+
+def _waste_by_area_chart(area_totals, area_levels, level_legend, total_width):
+    """Bar chart coloured by each area's threshold-derived alert level."""
+
+    top_areas = sorted(area_totals.items(), key=lambda x: x[1], reverse=True)[:8]
+
+    # Laid out bottom-up: area labels, x-axis, bars, legend, title.
+    chart_x = 50
+    chart_y = 32
+    chart_height = 170
+    chart_width = total_width - chart_x - 20
+    legend_line_height = 14
+    legend_rows = -(-len(level_legend) // 2)  # two entries per row
+    # Clearance so the tallest bar's value label never runs into the legend.
+    legend_bottom = chart_y + chart_height + 16
+    title_y = legend_bottom + (legend_rows - 1) * legend_line_height + 20
+    drawing = Drawing(total_width, title_y + 14)
+
+    title = 'Waste by Area'
+    if len(area_totals) > len(top_areas):
+        title += f' (Top {len(top_areas)})'
+    drawing.add(String(total_width / 2, title_y, title,
+                       fontSize=12, textAnchor='middle', fillColor=BSU_MAROON))
+
+    # Same legend as the preview: colour, level, and the threshold range.
+    legend_col_width = (total_width - chart_x) / 2
+    for index, item in enumerate(level_legend):
+        x = chart_x + (index % 2) * legend_col_width
+        y = legend_bottom + (legend_rows - 1 - index // 2) * legend_line_height
+        drawing.add(Rect(x, y, 9, 7,
+                         fillColor=colors.HexColor(item['color']),
+                         strokeColor=colors.HexColor(item['color'])))
+        drawing.add(String(x + 13, y, f"{item['level']}  ({item['range']})",
+                           fontSize=7, fillColor=colors.HexColor('#334155'),
+                           textAnchor='start'))
+
+    drawing.add(Line(chart_x, chart_y, chart_x, chart_y + chart_height,
+                     strokeColor=colors.HexColor('#334155')))
+    drawing.add(Line(chart_x, chart_y, chart_x + chart_width, chart_y,
+                     strokeColor=colors.HexColor('#334155')))
+
+    max_value = max((value for _, value in top_areas), default=0) or 1
+    bar_gap = 12
+    bar_width = min(28, (chart_width - (len(top_areas) - 1) * bar_gap) / len(top_areas))
+
+    for index, (area_name, amount) in enumerate(top_areas):
+        bar_height = (amount / max_value) * chart_height
+        bar_x = chart_x + index * (bar_width + bar_gap)
+        bar_color = LEVEL_COLORS.get(area_levels.get(area_name), BSU_MAROON)
+        label = area_name if len(area_name) <= 12 else area_name[:12] + '...'
+        drawing.add(Rect(bar_x, chart_y, bar_width, bar_height,
+                         fillColor=bar_color, strokeColor=colors.HexColor('#334155')))
+        drawing.add(String(bar_x + bar_width / 2, chart_y - 10, label,
+                           fontSize=7, fillColor=colors.HexColor('#334155'),
+                           textAnchor='middle'))
+        drawing.add(String(bar_x + bar_width / 2, chart_y + bar_height + 4, f'{amount:.0f}',
+                           fontSize=7, fillColor=colors.HexColor('#334155'),
+                           textAnchor='middle'))
+
+    return drawing
+
+
+def build_waste_report_pdf(records, report_type, period_label,
+                           area_groups=None, level_legend=None):
     buffer = BytesIO()
 
     doc = BaseDocTemplate(
@@ -125,13 +278,10 @@ def build_waste_report_pdf(records, report_type, period_label):
 
     records = list(records)
     total_amount = sum(r.amount or 0 for r in records)
-
-    # Group records per area (sorted so each area appears together).
-    from itertools import groupby
-    sorted_records = sorted(records, key=lambda r: str(r.area))
-    area_groups = [
-        (area, list(items))
-        for area, items in groupby(sorted_records, key=lambda r: str(r.area))
+    area_groups = list(area_groups or [])
+    level_legend = level_legend or [
+        {'level': level, 'range': '', 'color': hex_value}
+        for level, hex_value in LEVEL_HEX.items()
     ]
 
     # Summary line
@@ -146,21 +296,16 @@ def build_waste_report_pdf(records, report_type, period_label):
         summary_style,
     ))
 
-    area_totals = {}
-    area_alerts = {}
-    for record in records:
-        area_name = str(record.area)
-        area_totals[area_name] = area_totals.get(area_name, 0) + (record.amount or 0)
-        current_alert = area_alerts.get(area_name, 'Low')
-        if LEVEL_ORDER.get(record.alert_level, 0) > LEVEL_ORDER.get(current_alert, 0):
-            area_alerts[area_name] = record.alert_level
+    col_widths = [70, 68, 42, 46, 52, 46, 38, 30, 78]
+    content_width = sum(col_widths)
 
-    if area_totals:
-        sorted_areas = sorted(area_totals.items(), key=lambda x: x[1], reverse=True)
-        top_areas = sorted_areas[:8]
-        labels = [label if len(label) <= 12 else label[:12] + '...' for label, _ in top_areas]
-        values = [[value for _, value in top_areas]]
-        colors_for_bars = [LEVEL_COLORS.get(area_alerts.get(area, 'Low'), BSU_MAROON) for area, _ in top_areas]
+    story.append(_legend_flowable(level_legend, content_width, styles))
+    story.append(Spacer(1, 12))
+
+    # Area totals / levels come from the same grouping the preview renders,
+    # so a bar's colour always agrees with its group header.
+    area_totals = {g['area']: g['total_bags'] for g in area_groups}
+    area_levels = {g['area']: g['alert_level'] for g in area_groups}
 
     # Table
     header = ['Area', 'Waste Type', 'No. of Bags', 'Alert Level',
@@ -169,17 +314,29 @@ def build_waste_report_pdf(records, report_type, period_label):
 
     level_cmds = []
     group_cmds = []
-    for area, items in area_groups:
-        subtotal = sum(r.amount or 0 for r in items)
+    for group in area_groups:
+        area = group['area']
+        items = group['records']
+        group_level = group['alert_level']
         gidx = len(data)
+
+        # Group header mirrors the preview row: area, record/bag counts, and
+        # the level for the area's total under the current thresholds.
         data.append([
             Paragraph(
-                f'{area} &nbsp;&mdash;&nbsp; {len(items)} record(s), '
-                f'{subtotal:.0f} bag(s) total', group_style,
-            )
-        ] + [''] * 8)
-        group_cmds.append(('SPAN', (0, gidx), (-1, gidx)))
+                f"{area} &nbsp;&mdash;&nbsp; {group['record_count']} record(s), "
+                f"{group['total_bags']:.0f} bag(s) total", group_style,
+            ), '', '',
+            Paragraph(group_level, ParagraphStyle(
+                'GroupLevel', parent=cell_style, fontSize=7,
+                textColor=LEVEL_TEXT_COLORS.get(group_level, colors.white),
+                fontName='Helvetica-Bold', alignment=TA_CENTER)),
+        ] + [''] * 5)
+        group_cmds.append(('SPAN', (0, gidx), (2, gidx)))
+        group_cmds.append(('SPAN', (4, gidx), (-1, gidx)))
         group_cmds.append(('BACKGROUND', (0, gidx), (-1, gidx), colors.HexColor('#e8f2ec')))
+        if group_level in LEVEL_COLORS:
+            group_cmds.append(('BACKGROUND', (3, gidx), (3, gidx), LEVEL_COLORS[group_level]))
 
         for r in items:
             i = len(data)
@@ -205,7 +362,6 @@ def build_waste_report_pdf(records, report_type, period_label):
     if not records:
         data.append([Paragraph('No records found for this period.', cell_style)] + [''] * 8)
 
-    col_widths = [70, 68, 42, 46, 52, 46, 38, 30, 78]
     table = Table(data, colWidths=col_widths, repeatRows=1)
 
     style = TableStyle([
@@ -227,37 +383,9 @@ def build_waste_report_pdf(records, report_type, period_label):
     story.append(Spacer(1, 14))
 
     if area_totals:
-        drawing = Drawing(450, 280)
-        drawing.add(String(225, 255, 'Waste by Area', fontSize=12, textAnchor='middle', fillColor=BSU_MAROON))
-
-        legend_x = 50
-        legend_y = 235
-        for level in ['Low', 'Moderate', 'High', 'Critical']:
-            drawing.add(Rect(legend_x, legend_y, 10, 6, fillColor=LEVEL_COLORS[level], strokeColor=LEVEL_COLORS[level]))
-            drawing.add(String(legend_x + 14, legend_y, level, fontSize=7, fillColor=colors.HexColor('#334155'), textAnchor='start'))
-            legend_x += 70
-
-        max_value = max(values[0]) if values[0] else 1
-        chart_height = 170
-        chart_width = 340
-        chart_x = 50
-        chart_y = 25
-        bar_gap = 12
-        bar_width = min(28, (chart_width - (len(values[0]) - 1) * bar_gap) / len(values[0]))
-
-        drawing.add(Line(chart_x, chart_y, chart_x, chart_y + chart_height, strokeColor=colors.HexColor('#334155')))
-        drawing.add(Line(chart_x, chart_y, chart_x + chart_width, chart_y, strokeColor=colors.HexColor('#334155')))
-
-        for idx, (area_name, amount) in enumerate(top_areas):
-            bar_height = (amount / max_value) * chart_height if max_value else 0
-            bar_x = chart_x + idx * (bar_width + bar_gap)
-            bar_y = chart_y
-            bar_color = LEVEL_COLORS.get(area_alerts.get(area_name, 'Low'), BSU_MAROON)
-            drawing.add(Rect(bar_x, bar_y, bar_width, bar_height, fillColor=bar_color, strokeColor=colors.HexColor('#000000')))
-            drawing.add(String(bar_x + bar_width / 2, bar_y - 10, labels[idx], fontSize=7, fillColor=colors.HexColor('#334155'), textAnchor='middle'))
-            drawing.add(String(bar_x + bar_width / 2, bar_y + bar_height + 4, f'{amount:.0f}', fontSize=7, fillColor=colors.HexColor('#334155'), textAnchor='middle'))
-
-        story.append(drawing)
+        story.append(_waste_by_area_chart(
+            area_totals, area_levels, level_legend, content_width,
+        ))
         story.append(Spacer(1, 14))
 
     note_style = ParagraphStyle(

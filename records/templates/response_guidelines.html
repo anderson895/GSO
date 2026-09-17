@@ -212,9 +212,10 @@
             @media (max-width: 900px) {
                 .mobile-menu-btn { display: grid; }
                 .layout { grid-template-columns: 1fr; }
+                .main { margin-top: 0 !important; padding-top: 20px !important; }
                 .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; transform: translateX(-100%); padding: 24px 18px; z-index: 50; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25); }
                 .layout.sidebar-mobile-open .sidebar { transform: translateX(0); }
-                .layout.sidebar-mobile-open .sidebar-overlay { opacity: 1; visibility: visible; }
+                .layout.sidebar-mobile-open .sidebar-overlay { opacity: 1; visibility: visible; pointer-events: auto; }
                 .layout.sidebar-mobile-open .mobile-menu-btn { display: none; }
                 .sidebar-collapse { display: inline-flex; }
                 .layout.sidebar-collapsed { grid-template-columns: 1fr; }
@@ -226,8 +227,8 @@
 </head>
 
 <body>
-    <button type="button" class="mobile-menu-btn" aria-label="Open menu">☰</button>
-    <div class="sidebar-overlay"></div>
+    <button type="button" class="mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="app-sidebar">☰</button>
+    <div class="sidebar-overlay" aria-hidden="true"></div>
 
     <div class="layout">
 
@@ -319,75 +320,64 @@
     </div>
 
     <script>
-
-        function updateRanges() {
-
-            const low =
-                document.getElementById('low_max').value;
-
-            const moderate =
-                document.getElementById('moderate_max').value;
-
-            const high =
-                document.getElementById('high_max').value;
-
-            document.getElementById('low_display').textContent = low;
-
-            document.getElementById('moderate_min').textContent = low;
-
-            document.getElementById('high_min').textContent = moderate;
-
-            document.getElementById('critical_min').textContent = high;
-        }
-
-        document.getElementById('low_max')
-            .addEventListener('change', updateRanges);
-
-        document.getElementById('moderate_max')
-            .addEventListener('change', updateRanges);
-
-        document.getElementById('high_max')
-            .addEventListener('change', updateRanges);
-
-        updateRanges();
-
-    </script>
-
-    <script>
     document.addEventListener('DOMContentLoaded', function () {
 
         const layout = document.querySelector('.layout');
         const menuBtn = document.querySelector('.mobile-menu-btn');
         const overlay = document.querySelector('.sidebar-overlay');
         const collapseBtn = document.querySelector('.sidebar-collapse');
+        const sidebarLinks = document.querySelectorAll('.sidebar a');
 
-        menuBtn.addEventListener('click', function () {
-            layout.classList.add('sidebar-mobile-open');
-            overlay.classList.add('active');
-            menuBtn.classList.add('hidden');
-        });
-
-        overlay.addEventListener('click', function () {
-            layout.classList.remove('sidebar-mobile-open');
-            overlay.classList.remove('active');
-            menuBtn.classList.remove('hidden');
-        });
-
-        collapseBtn.addEventListener('click', function () {
-
-            if (window.innerWidth <= 900) {
-
-                layout.classList.remove('sidebar-mobile-open');
-                overlay.classList.remove('active');
-                menuBtn.classList.remove('hidden');
-
-            } else {
-
-                layout.classList.toggle('sidebar-collapsed');
-
+        function setMobileSidebar(open) {
+            if (!layout) return;
+            layout.classList.toggle('sidebar-mobile-open', open);
+            if (overlay) {
+                overlay.classList.toggle('active', open);
+                overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
             }
+            if (menuBtn) {
+                menuBtn.classList.toggle('hidden', open);
+                menuBtn.setAttribute('aria-expanded', String(open));
+            }
+        }
 
+        if (menuBtn) {
+            menuBtn.addEventListener('click', function () {
+                setMobileSidebar(!layout.classList.contains('sidebar-mobile-open'));
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function () {
+                setMobileSidebar(false);
+            });
+        }
+
+        sidebarLinks.forEach(function(link) {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 900) {
+                    setMobileSidebar(false);
+                }
+            });
         });
+
+        if (collapseBtn) {
+            collapseBtn.addEventListener('click', function () {
+                if (window.innerWidth <= 900) {
+                    setMobileSidebar(false);
+                } else {
+                    layout.classList.toggle('sidebar-collapsed');
+                }
+            });
+        }
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 900) {
+                setMobileSidebar(false);
+            }
+        });
+
+        setMobileSidebar(false);
 
     });
     </script>

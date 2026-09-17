@@ -1,7 +1,10 @@
 {% load static %}
 <style>
-    .sidebar { padding: 24px 18px 0; background: linear-gradient(180deg, #14512a 0%, #0f4119 42%, #0e4118 100%); color: #d7ead9; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; overflow-x: hidden; }
+    .sidebar { padding: 24px 18px 0; background: linear-gradient(180deg, #14512a 0%, #0f4119 42%, #0e4118 100%); color: #d7ead9; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; overflow-x: hidden; }
     .sidebar-top { display: flex; align-items: center; }
+    @media (min-width: 761px) {
+        .sidebar { position: sticky; top: 0; height: 100vh; }
+    }
     .sidebar-top .sidebar-burger { margin-left: 0; margin-right: auto; background: transparent; border: none; color: #d7ead9; cursor: pointer; padding: 4px; display: inline-flex; border-radius: 8px; transition: background .2s ease; }
     .sidebar-top .sidebar-burger:hover { background: rgba(255,255,255,0.1); }
     .sidebar .brand { display: flex; align-items: center; gap: 10px; font-size: initial; font-weight: initial; }
@@ -44,13 +47,14 @@
     .layout.sidebar-collapsed .sidebar .nav-links a { justify-content: center; padding: 13px 0; }
 </style>
 
-<aside class="sidebar">
+<aside class="sidebar" id="app-sidebar">
 
     <div class="sidebar-top">
         <button type="button" class="sidebar-burger sidebar-collapse" aria-label="Toggle sidebar">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
     </div>
+
 
     <div class="brand">
         <img src="{% static 'images/bsu-emblem.png' %}" alt="BSU Logo">
@@ -93,6 +97,20 @@
             <span class="nav-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h11a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M8.5 4v15"/></svg></span>
             <span class="nav-label">Response Guidelines</span>
             <span class="nav-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </a>
+        <a href="{% url 'audit_log' %}"{% if active == 'audit_log' %} class="active"{% endif %}>
+            <span class="nav-ico">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="5" y="3" width="14" height="18" rx="2"/>
+                    <path d="M9 8h6M9 12h6M9 16h4"/>
+                </svg>
+            </span>
+            <span class="nav-label">Audit Log</span>
+            <span class="nav-chev">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 6l6 6-6 6"/>
+                </svg>
+            </span>
         </a>
     </div>
 

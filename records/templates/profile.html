@@ -303,25 +303,47 @@
             font-weight: 700;
         }
 
-        @media (max-width: 860px) {
+        @media (max-width: 900px) {
+            .mobile-menu-btn {
+                display: grid;
+            }
+
             .layout {
                 grid-template-columns: 1fr;
             }
 
             .sidebar {
-                position: relative;
-                width: auto;
-                height: auto;
-                top: auto;
-                padding: 24px 18px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 280px;
+                height: 100vh;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 55;
+                box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+                will-change: transform;
+            }
+
+            .layout.sidebar-mobile-open .sidebar {
+                transform: translateX(0);
+            }
+
+            .layout.sidebar-mobile-open .mobile-menu-btn {
+                display: none !important;
             }
 
             .main {
-                padding: 20px 16px;
+                padding: 80px 16px 20px;
+            }
+
+            .topbar h1 {
+                font-size: 1.7rem;
             }
 
             .profile-panel {
                 max-width: 100%;
+                padding: 24px;
             }
 
             .info-row {
@@ -334,6 +356,20 @@
 
             .btn {
                 width: 100%;
+            }
+
+            .sidebar-collapse {
+                display: inline-flex;
+            }
+
+            .layout.sidebar-collapsed {
+                grid-template-columns: 1fr;
+            }
+
+            .layout.sidebar-collapsed .sidebar {
+                width: 280px;
+                min-width: auto;
+                padding: 24px 18px;
             }
         }
         .sidebar-collapse {
@@ -383,29 +419,42 @@
             background: rgba(0, 0, 0, 0.45);
             opacity: 0;
             visibility: hidden;
+            pointer-events: none;
             transition: opacity 0.25s ease, visibility 0.25s ease;
             z-index: 45;
         }
         .sidebar-overlay.active {
             opacity: 1;
             visibility: visible;
+            pointer-events: auto;
         }
         @media (max-width: 900px) {
             .mobile-menu-btn { display: grid; }
             .layout { grid-template-columns: 1fr; }
-            .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; transform: translateX(-100%); padding: 24px 18px; z-index: 55; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25); will-change: transform; }
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 280px;
+                height: 100vh;
+                transform: translateX(-100%);
+                padding: 24px 18px;
+                z-index: 55;
+                box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+                will-change: transform;
+            }
             .layout.sidebar-mobile-open .sidebar { transform: translateX(0); }
+            .sidebar-overlay.active { opacity: 1; visibility: visible; pointer-events: auto; }
             .layout.sidebar-mobile-open .mobile-menu-btn { display: none !important; }
             .sidebar-collapse { display: inline-flex; }
             .layout.sidebar-collapsed { grid-template-columns: 1fr; }
             .layout.sidebar-collapsed .sidebar { width: 280px; min-width: auto; padding: 24px 18px; }
-            .layout.sidebar-mobile-open { overflow: hidden; }
         }
 </style>
 </head>
 <body>
-    <button type="button" class="mobile-menu-btn" aria-label="Open menu">☰</button>
-    <div class="sidebar-overlay"></div>
+    <button type="button" class="mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="app-sidebar">☰</button>
+    <div class="sidebar-overlay" aria-hidden="true"></div>
     <div class="layout">
         {% if request.user.profile.role == 'Head Supervisor' %}
             {% include 'partials/admin_sidebar.html' with active='profile' %}
@@ -513,34 +562,70 @@
             var overlay = document.querySelector('.sidebar-overlay');
             var menuButton = document.querySelector('.mobile-menu-btn');
             var collapseButton = document.querySelector('.sidebar-collapse');
+            var sidebarLinks = document.querySelectorAll('.sidebar a');
+
+            function setMobileSidebar(open) {
+                if (!layout) return;
+                layout.classList.toggle('sidebar-mobile-open', open);
+
+                if (overlay) {
+                    overlay.classList.toggle('active', open);
+                    overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+                }
+
+                if (menuButton) {
+                    menuButton.classList.toggle('hidden', open);
+                    menuButton.setAttribute('aria-expanded', String(open));
+                }
+
+                if (open) {
+                    // keep page scrolling enabled when the mobile sidebar opens
+                }
+            }
 
             if (menuButton && layout) {
                 menuButton.addEventListener('click', function() {
-                    layout.classList.add('sidebar-mobile-open');
-                    overlay.classList.add('active');
-                    menuButton.classList.add('hidden');
+                    setMobileSidebar(!layout.classList.contains('sidebar-mobile-open'));
                 });
             }
 
             if (overlay && layout) {
                 overlay.addEventListener('click', function() {
-                    layout.classList.remove('sidebar-mobile-open');
-                    overlay.classList.remove('active');
-                    menuButton.classList.remove('hidden');
+                    setMobileSidebar(false);
                 });
             }
 
+            sidebarLinks.forEach(function(link) {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 900) {
+                        setMobileSidebar(false);
+                    }
+                });
+            });
+
             if (collapseButton && layout) {
                 collapseButton.addEventListener('click', function() {
-                    if (layout.classList.contains('sidebar-mobile-open')) {
-                        layout.classList.remove('sidebar-mobile-open');
-                        overlay.classList.remove('active');
-                        menuButton.classList.remove('hidden');
+                    if (window.innerWidth <= 900) {
+                        setMobileSidebar(false);
                     } else {
                         layout.classList.toggle('sidebar-collapsed');
                     }
                 });
             }
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && layout.classList.contains('sidebar-mobile-open')) {
+                    setMobileSidebar(false);
+                }
+            });
+
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 900) {
+                    setMobileSidebar(false);
+                }
+            });
+
+            setMobileSidebar(false);
         });
     </script>
 </body>

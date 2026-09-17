@@ -56,7 +56,8 @@
             .sidebar-deco { margin-top: auto; margin-left: -18px; margin-right: -18px; }
             .sidebar-deco img { display: block; width: 100%; }
 
-            .main { padding: 16px; }
+            .main{ padding:24px; width:100%; overflow-x:hidden; }
+            body{ overflow-x:hidden; }
             .topbar { display: flex; justify-content: space-between; gap: 18px; align-items: center; margin-bottom: 26px; }
             .topbar h1 { margin: 0; font-size: 2rem; }
             .topbar .profile { display: inline-flex; align-items: center; gap: 12px; background: var(--panel); padding: 14px 18px; border-radius: 20px; box-shadow: var(--shadow); }
@@ -83,13 +84,16 @@
             .change-content .status { margin-top: 8px; font-size: 0.95rem; color: var(--muted); }
 
             .panel { background: var(--panel); border-radius: 28px; padding: 28px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
-            #adminChart {height: 400px !important;}
+            .chart-wrapper{ position:relative; width:100%; height:400px; }
             .panel-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; margin-bottom: 22px; }
             .panel-header h2 { margin: 0; font-size: 1.35rem; }
             .panel-subtitle{ margin-top:8px; color:#64748b; font-size:.95rem; }
             .panel-title-wrap { display: flex; align-items: center; gap: 14px; }
             .panel-leaf { width: 48px; height: 48px; border-radius: 50%; background: #e8f5ec; color: #2e8b3d; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
             .badge { padding: 10px 14px; border-radius: 999px; background: #d1fae5; color: #0f172a; font-weight: 700; font-size: 0.86rem; }
+            
+            .chart-wrapper{ width:100%; overflow-x:auto; }
+            .chart-wrapper canvas{ width:100% !important; height:100% !important; }
             
             .trend-filters{ display:flex; gap:20px; align-items:flex-end; }
             .filter-group{ display:flex; flex-direction:column; gap:6px; }
@@ -135,14 +139,13 @@
             .post-meta { display: flex; flex-wrap: wrap; gap: 10px; color: var(--muted); font-size: 0.95rem; }
             .post-meta span { background: #f0fdf4; padding: 8px 12px; border-radius: 999px; }
 
+
             @media (max-width: 1060px) { 
                 .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
                 .change-card { flex-direction: column; }
                 .change-icon { width: 60px; height: 60px; }
             }
             @media (max-width: 860px) {
-                .layout { grid-template-columns: 1fr; }
-                .sidebar { position: relative; width: auto; height: auto; top: auto; padding: 24px 18px; }
                 .main { padding: 20px 16px; }
                 .topbar { flex-direction: column; align-items: flex-start; gap: 16px; }
                 .topbar .profile { width: 100%; justify-content: space-between; }
@@ -209,6 +212,7 @@
                 background: rgba(0, 0, 0, 0.45);
                 opacity: 0;
                 visibility: hidden;
+                pointer-events: none;
                 transition: opacity 0.25s ease, visibility 0.25s ease;
                 z-index: 45;
             }
@@ -216,6 +220,7 @@
             .sidebar-overlay.active {
                 opacity: 1;
                 visibility: visible;
+                pointer-events: auto;
             }
 
             .sidebar-collapse {
@@ -241,26 +246,34 @@
             .layout.sidebar-collapsed .sidebar .nav-links .nav-chev,
             .layout.sidebar-collapsed .sidebar .sidebar-deco,
             .layout.sidebar-collapsed .sidebar .logout-btn .nav-label { display: none !important; }
-            @media (max-width: 900px) {
-                .mobile-menu-btn { display: grid; }
-                .layout { grid-template-columns: 1fr; }
-                .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; transform: translateX(-100%); padding: 24px 18px; z-index: 50; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25); }
-                .layout.sidebar-mobile-open .sidebar { transform: translateX(0); }
-                .layout.sidebar-mobile-open .sidebar-overlay { opacity: 1; visibility: visible; }
-                .layout.sidebar-mobile-open .mobile-menu-btn { display: none; }
-                .sidebar-collapse { display: inline-flex; }
-                .layout.sidebar-collapsed { grid-template-columns: 1fr; }
-                .layout.sidebar-collapsed .sidebar { width: 280px; min-width: auto; padding: 24px 18px; }
-                .cards{ grid-template-columns: repeat(2, 1fr); gap:12px; }
-                .card{ padding:14px;}
-                .card .value{ font-size:1.4rem; font-weight:700;}
-                .card h3{ font-size:0.75rem;}
-                .card .note{ font-size:0.8rem; line-height:1.4; display:none;}
-                .topbar h1{ padding-left:60px;}
-                .cards{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; width:100%; }
-                .chart-wrapper canvas{  min-width:0; width:100% !important; height:220px !important; }
+        @media (max-width:900px) {
+            .mobile-menu-btn { display: grid; }
+            .layout { grid-template-columns: 1fr; }
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 280px;
+                height: 100vh;
+                transform: translateX(-100%);
+                padding: 24px 18px;
+                z-index: 50;
+                box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+                transition: transform 0.3s ease;
             }
-
+            .layout.sidebar-mobile-open .sidebar { transform: translateX(0); }
+            .layout.sidebar-mobile-open .mobile-menu-btn { display: none; }
+            .main { padding: 80px 16px 20px; }
+            .topbar h1 { font-size: 1.7rem; }
+            .main > *:first-child { margin-top: 0 !important; }
+            .topbar { margin-top: 0 !important; padding-top: 0 !important; margin-bottom: 20px !important; }
+            .container { margin-top: 0 !important; padding-top: 0 !important; }
+            .panel { margin-top: 0 !important; }
+            .form-card { margin-top: 0 !important; }
+            .sidebar-collapse { display: inline-flex; }
+            .layout.sidebar-collapsed { grid-template-columns: 1fr; }
+            .layout.sidebar-collapsed .sidebar { width: 280px; min-width: auto; padding: 24px 18px; }
+        }
     </style>
 
 </head>
@@ -268,7 +281,7 @@
 
 
 <body>
-    <button type="button" class="mobile-menu-btn" aria-label="Open menu">☰</button>
+    <button type="button" class="mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="app-sidebar">☰</button>
     <div class="sidebar-overlay"></div>
 
     <div class="layout">
@@ -295,8 +308,7 @@
                 </div>
             </div>
 
-            <div class="cards">
-
+              <div class="cards">
                 <div class="card">
                     <div class="card-top">
                         <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="2.3"/><circle cx="6.5" cy="9.5" r="2"/><circle cx="17.5" cy="9.5" r="2"/><path d="M8 17c0-2.2 1.8-4 4-4s4 1.8 4 4"/><path d="M3 16.5c.1-1.8 1.4-3.2 3.2-3.4"/><path d="M21 16.5c-.1-1.8-1.4-3.2-3.2-3.4"/></svg></span>
@@ -320,7 +332,7 @@
                         <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4h6v3"/><path d="M10 11v6M14 11v6"/></svg></span>
                         <h3>Total Waste</h3>
                     </div>
-                    <p class="value">{{ total_waste|floatformat:2 }}</p>
+                    <p class="value">{{ total_waste|floatformat:0 }}</p>
                     <p class="note">Combined waste amount.</p>
                 </div>
 
@@ -335,9 +347,8 @@
 
             </div>
 
-            <div class="panel">
 
-                <div class="panel">
+            <div class="panel">
 
             <div class="panel-header">
 
@@ -361,10 +372,21 @@
                             class="filter-select"
                             onchange="this.form.submit()">
 
-                            <option value="today" {% if trend_period == 'today' %}selected{% endif %}>Today</option>
-                            <option value="last_week" {% if trend_period == 'last_week' %}selected{% endif %}>Last Week</option>
-                            <option value="last_month" {% if trend_period == 'last_month' %}selected{% endif %}>Last Month</option>
-                            <option value="this_year" {% if trend_period == 'this_year' %}selected{% endif %}>This Year</option>
+                            <option value="daily" {% if trend_period == 'daily' %}selected{% endif %}>
+                                Daily
+                            </option>
+
+                            <option value="weekly" {% if trend_period == 'weekly' %}selected{% endif %}>
+                                Weekly
+                            </option>
+
+                            <option value="monthly" {% if trend_period == 'monthly' %}selected{% endif %}>
+                                Monthly
+                            </option>
+
+                            <option value="yearly" {% if trend_period == 'yearly' %}selected{% endif %}>
+                                Yearly
+                            </option>
 
                         </select>
                     </div>
@@ -389,19 +411,17 @@
 
             </div>
 
-            <div class="chart-wrapper">
-                <canvas id="adminChart"></canvas>
-            </div>
+            
 
-        </div>
+    
+
 
                 <div class="chart-wrapper">
                     <canvas id="adminChart"></canvas>
                 </div>
 
-            </div>
+</div>
 
-            </div>
 
         </main>
 
@@ -409,25 +429,29 @@
 
     <script>
     const ctx = document.getElementById('adminChart');
-
+    const trendPeriod = "{{ trend_period }}";
+    
     new Chart(ctx, {
-        type: 'line',
+        type: trendPeriod === "yearly" ? "bar" : "line",
         data: {
             labels: {{ graph_labels|safe }},
             datasets: [{
                 label: 'Total Waste',
                 data: {{ graph_values|safe }},
-                
-                tension: 0.4,
-                borderWidth: 3,
-                borderColor: '#14984f',
-                backgroundColor: 'rgba(20, 152, 79, 0.18)',
-                pointBackgroundColor: '#14984f',
-                pointBorderColor: '#14984f',
-                
-                fill: {
-                    target: 'origin'
-                }
+
+                backgroundColor:
+                    trendPeriod === "yearly"
+                        ? "rgba(20, 152, 79, 0.5)"
+                        : "rgba(20, 152, 79, 0.18)",
+
+                borderColor: "#14984f",
+                borderWidth: trendPeriod === "yearly" ? 5 : 5,
+                borderRadius: trendPeriod === "yearly" ? 8 : 0,
+
+                barThickness: 150,
+                maxBarThickness: 150,
+
+                fill: trendPeriod !== "yearly",
             }]
         },
         options: {
@@ -449,6 +473,9 @@
 
             scales: {
                 x: {
+
+                    offset: trendPeriod === "yearly",
+
                     title: {
                         display: true,
                         text: 'Time Period',
@@ -502,36 +529,66 @@
         const menuBtn = document.querySelector('.mobile-menu-btn');
         const overlay = document.querySelector('.sidebar-overlay');
         const collapseBtn = document.querySelector('.sidebar-collapse');
+        const sidebarLinks = document.querySelectorAll('.sidebar a');
+        let scrollY = 0;
 
-        menuBtn.addEventListener('click', function () {
-            layout.classList.add('sidebar-mobile-open');
-            overlay.classList.add('active');
-            menuBtn.classList.add('hidden');
-        });
-
-        overlay.addEventListener('click', function () {
-            layout.classList.remove('sidebar-mobile-open');
-            overlay.classList.remove('active');
-            menuBtn.classList.remove('hidden');
-        });
-
-        collapseBtn.addEventListener('click', function () {
-
-            if (window.innerWidth <= 900) {
-
-                layout.classList.remove('sidebar-mobile-open');
-                overlay.classList.remove('active');
-                menuBtn.classList.remove('hidden');
-
-            } else {
-
-                layout.classList.toggle('sidebar-collapsed');
-
+        function setMobileSidebar(open) {
+            if (!layout) return;
+            layout.classList.toggle('sidebar-mobile-open', open);
+            if (overlay) {
+                overlay.classList.toggle('active', open);
+                overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+            }
+            if (menuBtn) {
+                menuBtn.classList.toggle('hidden', open);
+                menuBtn.setAttribute('aria-expanded', String(open));
             }
 
+            if (open) {
+                scrollY = window.scrollY || window.pageYOffset || 0;
+            }
+        }
+
+        if (menuBtn) {
+            menuBtn.addEventListener('click', function () {
+                setMobileSidebar(!layout.classList.contains('sidebar-mobile-open'));
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function () {
+                setMobileSidebar(false);
+            });
+        }
+
+        sidebarLinks.forEach(function(link) {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 900) {
+                    setMobileSidebar(false);
+                }
+            });
         });
 
-    });
+        if(collapseBtn){
+            collapseBtn.addEventListener('click', function () {
+                if (window.innerWidth <= 900) {
+                    setMobileSidebar(false);
+                } else {
+                    layout.classList.toggle('sidebar-collapsed');
+                }
+            });
+        }
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 900) {
+                setMobileSidebar(false);
+            }
+        });
+
+        setMobileSidebar(false);
+
+        });
+
     </script>
 
 </body>

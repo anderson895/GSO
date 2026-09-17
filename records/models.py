@@ -78,7 +78,7 @@ class WasteRecord(models.Model):
     )
     waste_type = models.CharField(max_length=30, choices=WASTE_TYPE_CHOICES)
     alert_level = models.CharField(max_length=10, choices=ALERT_LEVEL_CHOICES)
-    amount = models.FloatField(default=0)
+    amount = models.PositiveIntegerField(default=0)
     photo = models.FileField(upload_to='report_photos/', null=True, blank=True)
     coordinator_comment = models.TextField(blank=True, null=True)
     coordinator_rating = models.IntegerField(blank=True, null=True)
@@ -127,12 +127,26 @@ class DeanMessage(models.Model):
 
 
 class ThresholdSettings(models.Model):
+
+    REPORTING_PERIOD_CHOICES = [
+        ('Today', 'Today'),
+        ('This Week', 'This Week'),
+        ('This Month', 'This Month'),
+        ('This Year', 'This Year'),
+    ]
+
+    reporting_period = models.CharField(
+        max_length=20,
+        choices=REPORTING_PERIOD_CHOICES,
+        unique=True
+    )
+
     low_max = models.FloatField(default=4.00)
     moderate_max = models.FloatField(default=7.00)
     high_max = models.FloatField(default=10.00)
 
     def __str__(self):
-        return "Waste Threshold Settings"
+        return f"{self.reporting_period} Waste Threshold Settings"
 
 
 class ResponseGuidelines(models.Model):
@@ -146,3 +160,61 @@ class ResponseGuidelines(models.Model):
 
     def __str__(self):
         return "Response Guidelines"
+
+
+class AuditLog(models.Model):
+
+    # Supervisor activity, reviewed by the Head Supervisor.
+    SUPERVISOR_ACTIONS = [
+        'Wrote Waste Record Feedback',
+        'Edited Waste Record Feedback',
+        'Sent Advisory Message',
+    ]
+
+    # Lead Janitor activity, reviewed by the Supervisor.
+    JANITOR_ACTIONS = [
+        'Submitted Waste Record',
+        'Edited Waste Record',
+        'Deleted Waste Record',
+    ]
+
+    ACTION_CHOICES = [
+        (action, action)
+        for action in SUPERVISOR_ACTIONS + JANITOR_ACTIONS
+    ]
+
+    performed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='hsv_audit_logs'
+    )
+
+    action = models.CharField(
+        max_length=50,
+        choices=ACTION_CHOICES
+    )
+
+    target = models.CharField(
+        max_length=200
+    )
+
+    details = models.TextField(
+        blank=True
+    )
+
+    content = models.TextField(
+        blank=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        username = self.performed_by.username if self.performed_by else 'Deleted User'
+        return f"{username} - {self.action} - {self.created_at}"

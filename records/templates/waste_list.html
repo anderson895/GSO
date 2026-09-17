@@ -47,7 +47,7 @@
         .profile-btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 22px; border-radius: 20px; background: var(--primary); color: white; text-decoration: none; font-weight: 700; box-shadow: var(--shadow); transition: transform 0.2s ease, background 0.2s ease; }
         .profile-btn:hover { transform: translateY(-1px); background: #0d7b3b; }
 
-        .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 28px; }
+        .cards{ display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:18px; }
         .card, .change-card { position: relative; background: var(--panel); border-radius: 18px; padding: 22px 24px 24px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.10); overflow: hidden; }
         .card::after, .change-card::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 4px; background: #2e8b3d; }
         .card.accent-orange::after, .change-card.accent-orange::after { background: #e97b00; }
@@ -204,18 +204,34 @@
         @media (max-width: 900px) {
             .mobile-menu-btn { display: grid; }
             .layout { grid-template-columns: 1fr; }
-            .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; transform: translateX(-100%); padding: 24px 18px; z-index: 50; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25); }
+            .cards{ grid-template-columns:1fr; }
+            .card{ width:100%; }
+            .change-card{ width:100%; }
+            .main{ margin:0; padding:90px 15px 20px; }
+            .sidebar{ position:fixed; top:0; left:0; width:280px; height:100vh; padding:24px 18px; overflow-y:auto; transform:translateX(-100%); transition:.3s ease; z-index:50; box-shadow:0 30px 80px rgba(0,0,0,.25); }
             .layout.sidebar-mobile-open .sidebar { transform: translateX(0); }
             .layout.sidebar-mobile-open .sidebar-overlay { opacity: 1; visibility: visible; }
             .layout.sidebar-mobile-open .mobile-menu-btn { display: none; }
             .sidebar-collapse { display: inline-flex; }
             .layout.sidebar-collapsed { grid-template-columns: 1fr; }
             .layout.sidebar-collapsed .sidebar { width: 280px; min-width: auto; padding: 24px 18px; }
+            
+        }    
+        @media(max-width:480px){
+            .topbar{ flex-direction:column; align-items:flex-start; }
+            .topbar h1{ font-size:1.4rem; }
+            .profile{ width:100%; }
+            .main{ width:100%; padding:15px; overflow-x:hidden; }
+            body{ overflow-x:hidden; }
+            .card{ padding:18px; }
+            .card h3{ font-size:1rem; }
+            canvas{ width:100% !important; height:auto !important; }
+
         }
 </style>
 </head>
 <body>
-    <button type="button" class="mobile-menu-btn" aria-label="Open menu">☰</button>
+    <button type="button" class="mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="app-sidebar">☰</button>
     <div class="sidebar-overlay"></div>
     <div class="layout">
         {% include 'partials/staff_sidebar.html' with active='dashboard' %}
@@ -271,7 +287,7 @@
                         <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M9 7V4h6v3"/><path d="M10 11v6M14 11v6"/></svg></span>
                         <h3>Total Waste</h3>
                     </div>
-                    <p class="value">{{ total_waste_all|floatformat:2 }}</p>
+                    <p class="value">{{ total_waste_all|floatformat:0 }}</p>
                     <p class="note">{% if request.user.profile.role == "Supervisor" %}Total for selected area.{% else %}Total amount recorded across all areas.{% endif %}</p>
                 </div>
 
@@ -382,7 +398,7 @@
                                     <td data-label="Date">{{ d.date }}</td>
                                     <td data-label="Time">{{ d.time }}</td>
                                     <td data-label="Type">{{ d.waste_type }}</td>
-                                    <td data-label="Number of Bags">{{ d.amount }}</td>
+                                    <td data-label="Number of Bags">{{ d.amount|floatformat:0 }}</td>
                                     <td data-label="Alert"><span class="status-pill status-{{ d.alert_level|lower }}">{{ d.alert_level }}</span></td>
                                     <td data-label="Rating">{% if d.coordinator_rating %}{{ d.coordinator_rating }} / 5{% else %}-{% endif %}</td>
                                     <td data-label="Remarks">{% if d.coordinator_comment %}{{ d.coordinator_comment }}{% else %}-{% endif %}</td>
@@ -410,7 +426,7 @@
                         <div class="post-meta">
                             <span><strong>Area:</strong> {{ d.area }}</span>
                             <span><strong>Type:</strong> {{ d.waste_type }}</span>
-                            <span><strong>Bags Collected:</strong> {{ d.bags_collected|floatformat:0 }} Bags</span>
+                            <span><strong>Bags Collected:</strong> {{ d.amount|floatformat:0 }} Bag/s</span>
                             <span><strong>Lead Janitor:</strong> {{ d.janitor }}</span>
                             <span><strong>Collected:</strong> {{ d.submitted_at|date:'M d, Y H:i' }}</span>
                         </div>
@@ -429,31 +445,63 @@
             var overlay = document.querySelector('.sidebar-overlay');
             var menuButton = document.querySelector('.mobile-menu-btn');
             var collapseButton = document.querySelector('.sidebar-collapse');
+            var sidebarLinks = document.querySelectorAll('.sidebar a');
+            var scrollY = 0;
+
+            function setMobileSidebar(open) {
+                if (!layout) return;
+                layout.classList.toggle('sidebar-mobile-open', open);
+                if (overlay) {
+                    overlay.classList.toggle('active', open);
+                    overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+                }
+                if (menuButton) {
+                    menuButton.classList.toggle('hidden', open);
+                    menuButton.setAttribute('aria-expanded', String(open));
+                }
+
+                if (open) {
+                    scrollY = window.scrollY || window.pageYOffset || 0;
+                }
+            }
 
             if (menuButton && layout) {
                 menuButton.addEventListener('click', function() {
-                    layout.classList.add('sidebar-mobile-open');
-                    menuButton.classList.add('hidden');
+                    setMobileSidebar(!layout.classList.contains('sidebar-mobile-open'));
                 });
             }
 
             if (overlay && layout) {
                 overlay.addEventListener('click', function() {
-                    layout.classList.remove('sidebar-mobile-open');
-                    menuButton.classList.remove('hidden');
+                    setMobileSidebar(false);
                 });
             }
 
+            sidebarLinks.forEach(function(link) {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 900) {
+                        setMobileSidebar(false);
+                    }
+                });
+            });
+
             if (collapseButton && layout) {
                 collapseButton.addEventListener('click', function() {
-                    if (layout.classList.contains('sidebar-mobile-open')) {
-                        layout.classList.remove('sidebar-mobile-open');
-                        menuButton.classList.remove('hidden');
+                    if (window.innerWidth <= 900) {
+                        setMobileSidebar(false);
                     } else {
                         layout.classList.toggle('sidebar-collapsed');
                     }
                 });
             }
+
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 900) {
+                    setMobileSidebar(false);
+                }
+            });
+
+            setMobileSidebar(false);
         });
     </script>
 </body>

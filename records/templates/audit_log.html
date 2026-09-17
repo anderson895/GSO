@@ -1,0 +1,569 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Log | GSO Waste Management System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f7fbf8;
+            --sidebar: #14512a;
+            --green: #17612b;
+            --text: #26352b;
+            --muted: #6f7d73;
+            --border: #e3ebe5;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: var(--text);
+            background: linear-gradient(180deg, #f7fbf8 0%, #e9f7ef 100%);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        .layout.sidebar-collapsed {
+            grid-template-columns: 84px 1fr;
+        }
+
+        .layout.sidebar-hidden {
+            grid-template-columns: 0 1fr;
+        }
+
+        .layout.sidebar-hidden .sidebar {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .layout.sidebar-hidden .sidebar * {
+            display: none !important;
+        }
+
+        .main {
+            min-width: 0;
+            padding: 32px;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            width: 44px;
+            height: 44px;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            border-radius: 12px;
+            background: rgba(20, 152, 79, 0.96);
+            color: #fff;
+            font-size: 1.35rem;
+            cursor: pointer;
+            z-index: 60;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
+        }
+
+        .mobile-menu-btn:hover {
+            background: rgba(20, 152, 79, 0.96);
+        }
+
+        .mobile-menu-btn.hidden {
+            display: none !important;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+            z-index: 45;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            color: #17612b;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .page-header p {
+            margin: 7px 0 0;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .audit-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(24, 79, 43, 0.07);
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-header h2 {
+            margin: 0;
+            color: #26352b;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .card-header span {
+            color: #7a877e;
+            font-size: 0.84rem;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .audit-table {
+            width: 100%;
+            min-width: 900px;
+            border-collapse: collapse;
+        }
+
+        .audit-table thead {
+            background: #f1f7f3;
+        }
+
+        .audit-table th {
+            padding: 14px 20px;
+            text-align: left;
+            color: #4d5d52;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+        }
+
+        .audit-table td {
+            padding: 17px 20px;
+            border-bottom: 1px solid #edf2ee;
+            font-size: 0.9rem;
+            vertical-align: top;
+        }
+
+        .audit-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .audit-table tbody tr:hover {
+            background: #fafdfb;
+        }
+
+        .timestamp {
+            color: #68766d;
+            white-space: nowrap;
+        }
+
+        .user-name {
+            color: #17612b;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .action-name {
+            color: #26352b;
+            font-weight: 600;
+            min-width: 210px;
+        }
+
+        .target-name {
+            color: #39483e;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .details-text {
+            color: #68766d;
+            line-height: 1.5;
+            min-width: 240px;
+        }
+
+        .empty-state {
+            padding: 70px 24px;
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            width: 54px;
+            height: 54px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            background: #edf7f0;
+            color: #17612b;
+        }
+
+        .empty-state h3 {
+            margin: 0 0 7px;
+            color: #39483e;
+            font-size: 1.05rem;
+        }
+
+        .empty-state p {
+            margin: 0;
+            color: #7a877e;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 900px) {
+            .mobile-menu-btn {
+                display: grid;
+            }
+
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: fixed !important;
+                top: 0;
+                left: 0;
+                width: 280px !important;
+                min-width: 280px !important;
+                height: 100vh !important;
+                transform: translateX(-100%);
+                padding: 24px 18px !important;
+                z-index: 50;
+                box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+                transition: transform 0.25s ease;
+            }
+
+            .layout.sidebar-mobile-open .sidebar {
+                transform: translateX(0);
+            }
+
+            .layout.sidebar-collapsed {
+                grid-template-columns: 1fr;
+            }
+
+            .layout.sidebar-collapsed .sidebar {
+                width: 280px !important;
+                min-width: 280px !important;
+                padding: 24px 18px !important;
+            }
+
+            .main {
+                padding: 24px 20px;
+            }
+
+            .page-header {
+                padding-left: 58px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .main {
+                padding: 20px 14px;
+            }
+
+            .page-header {
+                padding-left: 58px;
+            }
+
+            .page-header h1 {
+                font-size: 1.55rem;
+            }
+
+            .page-header p {
+                font-size: 0.85rem;
+            }
+
+            .card-header {
+                padding: 17px;
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .audit-table th,
+            .audit-table td {
+                padding: 13px 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <button
+        type="button"
+        class="mobile-menu-btn"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="app-sidebar"
+    >
+        ☰
+    </button>
+
+    <div class="sidebar-overlay" aria-hidden="true"></div>
+
+    <div class="layout">
+
+        {% if request.user.profile.role == 'Head Supervisor' %}
+            {% include 'partials/admin_sidebar.html' with active='audit_log' %}
+        {% else %}
+            {% include 'partials/staff_sidebar.html' with active='audit_log' %}
+        {% endif %}
+
+        <main class="main">
+
+            <div class="page-header">
+                <div>
+                    <h1>Audit Log</h1>
+                    <p>Track {{ tracked_role }} activities within the system.</p>
+                </div>
+            </div>
+
+            <section class="audit-card">
+
+                <div class="card-header">
+                    <h2>System Activity History</h2>
+
+                    {% if audit_entries %}
+                        <span>{{ audit_entries|length }} record{{ audit_entries|length|pluralize }}</span>
+                    {% else %}
+                        <span>No records</span>
+                    {% endif %}
+                </div>
+
+                {% if audit_entries %}
+
+                    <div class="table-wrapper">
+
+                        <table class="audit-table">
+
+                            <thead>
+                                <tr>
+                                    <th>Date &amp; Time</th>
+                                    <th>Performed By</th>
+                                    <th>Action</th>
+                                    <th>Target</th>
+                                    <th>Details</th>
+                                    <th>Content</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {% for log in audit_entries %}
+
+                                    <tr>
+
+                                        <td class="timestamp">
+                                            {{ log.displayed_at_formatted }}
+                                        </td>
+
+                                        <td class="user-name">
+                                            {% if log.performed_by %}
+                                                {{ log.performed_by.username }}
+                                            {% else %}
+                                                Deleted User
+                                            {% endif %}
+                                        </td>
+
+                                        <td class="action-name">
+                                            {{ log.action }}
+                                        </td>
+
+                                        <td class="target-name">
+                                            {{ log.target }}
+                                        </td>
+
+                                        <td class="details-text">
+                                            {% if log.details %}
+                                                {{ log.details }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td class="details-text">
+                                            {% if log.content %}
+                                                {{ log.content }}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </td>
+
+                                    </tr>
+
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="empty-state">
+
+                        <div class="empty-state-icon">
+                            <svg
+                                width="27"
+                                height="27"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <rect x="5" y="3" width="14" height="18" rx="2"/>
+                                <path d="M9 8h6M9 12h6M9 16h4"/>
+                            </svg>
+                        </div>
+
+                        <h3>No Audit Records Yet</h3>
+                        <p>{{ tracked_role }} activities will appear here.</p>
+
+                    </div>
+
+                {% endif %}
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const layout = document.querySelector('.layout');
+            const menuBtn = document.querySelector('.mobile-menu-btn');
+            const overlay = document.querySelector('.sidebar-overlay');
+            const collapseBtn = document.querySelector('.sidebar-collapse');
+            const sidebarLinks = document.querySelectorAll('.sidebar a');
+
+            function setMobileSidebar(open) {
+
+                if (!layout) {
+                    return;
+                }
+
+                layout.classList.toggle('sidebar-mobile-open', open);
+
+                if (overlay) {
+                    overlay.classList.toggle('active', open);
+                    overlay.setAttribute(
+                        'aria-hidden',
+                        open ? 'false' : 'true'
+                    );
+                }
+
+                if (menuBtn) {
+                    menuBtn.setAttribute(
+                        'aria-expanded',
+                        String(open)
+                    );
+                }
+            }
+
+            if (menuBtn) {
+                menuBtn.addEventListener('click', function () {
+
+                    setMobileSidebar(
+                        !layout.classList.contains('sidebar-mobile-open')
+                    );
+
+                });
+            }
+
+            if (overlay) {
+                overlay.addEventListener('click', function () {
+                    setMobileSidebar(false);
+                });
+            }
+
+            sidebarLinks.forEach(function (link) {
+
+                link.addEventListener('click', function () {
+
+                    if (window.innerWidth <= 900) {
+                        setMobileSidebar(false);
+                    }
+
+                });
+
+            });
+
+            if (collapseBtn) {
+
+                collapseBtn.addEventListener('click', function () {
+
+                    if (window.innerWidth <= 900) {
+
+                        setMobileSidebar(false);
+
+                    } else {
+
+                        layout.classList.toggle('sidebar-collapsed');
+
+                    }
+
+                });
+
+            }
+
+            window.addEventListener('resize', function () {
+
+                if (window.innerWidth > 900) {
+                    setMobileSidebar(false);
+                }
+
+            });
+
+        });
+    </script>
+
+</body>
+</html>

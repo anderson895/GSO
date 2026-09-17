@@ -58,11 +58,20 @@
             max-width: 30%;
         }
 
+        /* Near full-colour backdrop. object-fit crops the tower off the top so the
+           photo stays a band along the bottom; the asset carries its own right-edge
+           fade, and the mask melts the top into the page. */
         .deco-building {
-            bottom: 96px;
+            bottom: 0;
             left: 0;
-            width: 46%;
-            opacity: 0.85;
+            width: 54%;
+            height: 70%;
+            /* Overall strength of the photo -- the one knob to tune it. */
+            opacity: 0.45;
+            object-fit: cover;
+            object-position: left bottom;
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 46%);
+            mask-image: linear-gradient(to bottom, transparent 0%, #000 46%);
         }
 
         .deco-curve {
@@ -83,7 +92,9 @@
         .brand-panel {
             position: relative;
             z-index: 2;
-            padding: 64px 48px;
+            /* Bottom-heavy padding lifts the centred block into the upper half,
+               clear of the busiest part of the photo. */
+            padding: 4vh 48px 28vh;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -91,11 +102,35 @@
             justify-content: center;
         }
 
+        /* Soft white haze so the branding stays legible over the photo. */
+        .brand-panel::before {
+            content: '';
+            position: absolute;
+            inset: 4% 2% 8%;
+            background: radial-gradient(ellipse at center,
+                rgba(255, 255, 255, 0.78) 0%,
+                rgba(255, 255, 255, 0.46) 44%,
+                rgba(255, 255, 255, 0) 72%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Halo keeps the wordmark crisp where the haze alone is not enough. */
+        .brand-uni,
+        .brand-office,
+        .brand-system,
+        .brand-tagline {
+            text-shadow: 0 1px 12px rgba(255, 255, 255, 0.95);
+        }
+
+        /* Sized in vw so the emblem holds ~10% of the page width at any size; the
+           source PNG carries padding, so the box runs wider than the visible disc. */
         .brand-logo {
-            width: 150px;
-            height: 150px;
+            width: clamp(130px, 16.1vw, 330px);
+            height: auto;
+            aspect-ratio: 1;
             object-fit: contain;
-            margin-bottom: 22px;
+            margin-bottom: 14px;
             filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.18));
         }
 
@@ -152,7 +187,8 @@
 
         .form-card {
             width: 100%;
-            max-width: 640px;
+            /* ~49% of the viewport, matching the reference layout. */
+            max-width: 950px;
             background: #ffffff;
             border-radius: 20px;
             box-shadow: 0 24px 60px rgba(0, 0, 0, 0.16);
@@ -347,7 +383,7 @@
             .brand-panel { padding: 52px 32px 40px; }
             .brand-logo { width: 120px; height: 120px; }
             .brand-office { font-size: 28px; }
-            .deco-building { width: 70%; bottom: 0; opacity: 0.5; }
+            .deco-building { width: 66%; opacity: 0.45; }
             .deco-curve, .deco-bin { display: none; }
             .form-side { padding: 8px 24px 48px; }
             .form-card { box-shadow: none; max-width: 520px; padding: 8px 4px 0; }
@@ -366,7 +402,7 @@
     <div class="login-card">
         <!-- decorative layer -->
         <img class="deco deco-leaves"   src="{% static 'images/leaves-corner.png' %}"     alt="">
-        <img class="deco deco-building" src="{% static 'images/background_school.png' %}"  alt="">
+        <img class="deco deco-building" src="{% static 'images/elib-building.png' %}"      alt="">
         <svg class="deco deco-curve" viewBox="0 0 1440 400" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M0 285 C 260 325 480 350 720 350 C 1010 350 1240 295 1440 205 L1440 400 L0 400 Z" fill="#e97b00"/>
             <path d="M0 320 C 260 355 480 368 720 365 C 1010 362 1240 330 1440 250 L1440 400 L0 400 Z" fill="#2c5f1c"/>
@@ -476,3 +512,4 @@
     </script>
 </body>
 </html>
+

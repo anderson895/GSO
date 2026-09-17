@@ -6,15 +6,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Waste Threshold Settings</title>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Threshold Settings</title>
 
         <style>
             :root {
                 --bg: #e9f7ef;
                 --sidebar: #0f3d24;
-                --sidebar-soft: #143d2e;
                 --panel: #ffffff;
                 --primary: #14984f;
                 --text: #0f172a;
@@ -25,139 +22,73 @@
             * { box-sizing: border-box; }
             body {
                 margin: 0;
+                overflow-x: hidden;
                 font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                 color: var(--text);
                 background: linear-gradient(180deg, #f7fbf8 0%, #e9f7ef 100%);
             }
 
             .layout { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
-            .layout.sidebar-hidden { grid-template-columns: 0 1fr; }
-            .layout.sidebar-hidden .sidebar { width: 0; padding: 0; overflow: hidden; }
-            .layout.sidebar-hidden .sidebar * { display: none !important; }
-            .sidebar { padding: 32px 24px; background: var(--sidebar); color: #d1fae5; display: flex; flex-direction: column; gap: 28px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-            .brand { font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 12px; }
-            .brand span { width: 36px; height: 36px; border-radius: 14px; background: rgba(255, 255, 255, 0.12); display: grid; place-items: center; font-weight: 700; }
-            .sidebar p { color: #a7f3d0; line-height: 1.8; margin-bottom: 8px; }
-            .section-title { color: #86efac; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.18em; }
-            .nav-links { display: grid; gap: 10px; }
-            .nav-links a { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; border-radius: 16px; text-decoration: none; color: #d1fae5; background: rgba(255, 255, 255, 0.08); transition: transform 0.2s ease, background 0.2s ease; }
-            .nav-links a:hover, .nav-links a.active { background: rgba(255, 255, 255, 0.12); transform: translateX(2px); }
 
-            .main { padding: 28px 32px; }
-            .topbar { display: flex; justify-content: space-between; gap: 18px; align-items: center; margin-bottom: 26px; }
+            .main { padding: 24px; width: 100%; overflow-x: hidden; }
+            .topbar { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; margin-bottom: 22px; flex-wrap: wrap; }
             .topbar h1 { margin: 0; font-size: 2rem; }
-            .topbar .profile { display: inline-flex; align-items: center; gap: 12px; background: var(--panel); padding: 14px 18px; border-radius: 20px; box-shadow: var(--shadow); }
-            .topbar .profile img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
-            .topbar-actions { display: flex; justify-content: flex-end; margin-bottom: 18px; }
-            .profile-btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 22px; border-radius: 20px; background: var(--primary); color: white; text-decoration: none; font-weight: 700; box-shadow: var(--shadow); transition: transform 0.2s ease, background 0.2s ease; }
-            .profile-btn:hover { transform: translateY(-1px); background: #0d7b3b; }
+            .topbar p { margin: 6px 0 0; color: var(--muted); }
 
-            .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 28px; }
-            .card { background: var(--panel); border-radius: 24px; padding: 24px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
-            .card h3 { margin: 0 0 8px; font-size: 0.95rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
-            .card .value { margin: 0; font-size: 2rem; color: var(--text); }
-            .card .note { margin-top: 10px; color: var(--muted); line-height: 1.7; }
+            /* "About Thresholds" helper card, top right of the page header. */
+            .about-card { display: flex; align-items: flex-start; gap: 14px; max-width: 430px; background: var(--panel); border: 1px solid rgba(20, 152, 79, 0.16); border-radius: 16px; padding: 16px 20px; box-shadow: var(--shadow); }
+            .about-icon { flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid #2e8b3d; color: #2e8b3d; display: inline-flex; align-items: center; justify-content: center; }
+            .about-card h3 { margin: 0 0 6px; font-size: 0.95rem; color: #17612b; }
+            .about-card p { margin: 0; font-size: 0.83rem; line-height: 1.55; color: var(--muted); }
 
-            .change-card { background: var(--panel); border-radius: 24px; padding: 24px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); display: block; }
-            .change-content h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; }
-            .change-content .percentage { margin: 0; font-size: 1.8rem; font-weight: 700; }
-            .change-content .percentage.increased { color: #4f46e5; }
-            .change-content .percentage.decreased { color: #ef4444; }
-            .change-content .status { margin-top: 8px; font-size: 0.95rem; color: var(--muted); }
-
-            .panel { background: var(--panel); border-radius: 28px; padding: 28px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
-            #adminChart {height: 400px !important;}
-            .panel-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 22px; }
+            .panel { background: var(--panel); border-radius: 24px; padding: 26px 28px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
+            .panel-header { margin-bottom: 18px; }
             .panel-header h2 { margin: 0; font-size: 1.2rem; }
-            .badge { padding: 10px 14px; border-radius: 999px; background: #d1fae5; color: #0f172a; font-weight: 700; font-size: 0.86rem; }
 
-            .form-card { background: #f7fbf6; border-radius: 24px; padding: 28px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
-            .form-card form { display: grid; gap: 18px; }
-            .form-card input, .form-card select, .form-card textarea { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid #d9e2dc; background: #ffffff; font-family: inherit; font-size: 0.95rem; color: var(--text); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-            .form-card textarea { resize: vertical; min-height: 96px; line-height: 1.6; }
-            .form-card input:focus, .form-card select:focus, .form-card textarea:focus { outline: none; border-color: #2e8b3d; box-shadow: 0 0 0 4px rgba(46, 139, 61, 0.12); }
-            td select { padding: 9px 12px; border-radius: 8px; border: 1px solid #d9e2dc; background: #ffffff; font-family: inherit; font-size: 0.9rem; color: var(--text); cursor: pointer; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-            td select:hover { border-color: #b7d3bd; }
-            td select:focus { outline: none; border-color: #2e8b3d; box-shadow: 0 0 0 3px rgba(46, 139, 61, 0.12); }
-            .form-card button { width: fit-content; }
+            .errors { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; }
+            .errors ul { margin: 0; padding-left: 20px; line-height: 1.7; }
 
-            .table-wrapper { overflow-x: auto; }
-            table { width: 100%; border-collapse: collapse; min-width: 780px; }
-            th, td { padding: 16px 18px; text-align: left; border-bottom: 1px solid rgba(15, 23, 42, 0.08); }
-            th { color: var(--muted); font-size: 0.95rem; }
-            tr:hover { background: #f7fbf6; }
+            /* One grid shared by the header strip and every period row so the
+               columns line up like a table without table-layout quirks. */
+            /* The name column is narrower than the five data columns. 0.82/5.82
+               is the share it takes, and .period-row::before reuses that ratio. */
+            .t-grid { display: grid; grid-template-columns: 0.82fr repeat(5, minmax(0, 1fr)); gap: 18px; align-items: start; }
+            .t-head { padding: 12px 18px; border-radius: 12px; background: #f1f6f2; border: 1px solid rgba(20, 152, 79, 0.10); margin-bottom: 14px; }
+            .t-head span { font-size: 0.85rem; font-weight: 700; color: var(--text); text-align: center; }
 
-            .status-pill { display: inline-block; padding: 8px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
-            .status-low { background-color: #16a34a !important; color: white !important; }
-            .status-moderate { background-color: #fbbf24 !important; color: #0f172a !important; }
-            .status-high { background-color: #f87171 !important; color: white !important; }
-            .status-critical { background-color: #991b1b !important; color: white !important; }
+            .period-row { position: relative; border: 1px solid rgba(15, 23, 42, 0.10); border-radius: 16px; padding: 20px 18px 16px; margin-bottom: 16px; }
+            .period-row:hover { border-color: rgba(20, 152, 79, 0.30); }
+            /* Rule between the period name and the rest of the row, parked in the
+               middle of the first grid gap. 126px = 2 x 18px padding + 5 x 18px gaps. */
+            .period-row::before { content: ''; position: absolute; top: 0; bottom: 0; left: calc(27px + (100% - 126px) * 0.1409); border-left: 1px solid rgba(15, 23, 42, 0.10); }
 
-            .action-links { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-            .action-links a { display:inline-flex; align-items:center; justify-content:center; padding:8px 18px; border-radius:8px; font-weight:600; font-size:0.88rem; text-decoration:none; border:1px solid #cfe8d6; background:#e8f5ec; color:#17612b; cursor:pointer; transition:background 0.2s ease,color 0.2s ease,border-color 0.2s ease; margin:0; }
-            .action-links a:hover { background:#2e8b3d; color:#ffffff; border-color:#2e8b3d; }
-            .action-links a[href*="delete"] { background:#fdecec; color:#c0392b; border-color:#f5cfcf; }
-            .action-links a[href*="delete"]:hover { background:#dc2626; color:#ffffff; border-color:#dc2626; }
-            .logout-btn { width: 100%; padding: 14px 16px; border-radius: 16px; border: none; background: rgba(255, 255, 255, 0.04); color: #d1fae5; cursor: pointer; font-family: inherit; text-align: left; transition: background 0.2s ease, transform 0.2s ease; }
-            .logout-btn:hover { background: rgba(255, 255, 255, 0.12); transform: translateX(2px); }
-            .add-btn { border: none; border-radius: 999px; padding: 12px 20px; font-weight: 700; cursor: pointer; background: var(--primary); color: white; transition: transform 0.2s ease, background 0.2s ease; }
-            .add-btn:hover { transform: translateY(-1px); }
+            .period-name { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.16rem; padding-top: 6px; }
+            .period-desc { color: #334155; font-size: 0.9rem; line-height: 1.62; padding-top: 6px; padding-right: 22px; }
 
-            .container { display: grid; gap: 24px; padding-bottom: 28px; }
-            .post-card { background: var(--panel); border-radius: 28px; padding: 24px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.12); }
-            .post-card img { width: 100%; max-height: 320px; object-fit: cover; border-radius: 20px; margin-bottom: 16px; }
-            .post-meta { display: flex; flex-wrap: wrap; gap: 10px; color: var(--muted); font-size: 0.95rem; }
-            .post-meta span { background: #f0fdf4; padding: 8px 12px; border-radius: 999px; }
+            .t-field input { width: 100%; padding: 12px 10px; border-radius: 10px; border: 1px solid #d9e2dc; background: #ffffff; font-family: inherit; font-size: 1.25rem; font-weight: 700; text-align: center; color: var(--text); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+            .t-field input:focus { outline: none; border-color: #2e8b3d; box-shadow: 0 0 0 4px rgba(46, 139, 61, 0.12); }
+            .t-field .hint { display: block; margin-top: 8px; text-align: center; font-size: 0.83rem; color: #475569; }
 
-            @media (max-width: 1060px) { 
-                .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-                .change-card { flex-direction: column; }
-                .change-icon { width: 60px; height: 60px; }
-            }
-            @media (max-width: 860px) {
-                .layout { grid-template-columns: 1fr; }
-                .sidebar { position: relative; width: auto; height: auto; top: auto; padding: 24px 18px; }
-                .main { padding: 20px 16px; }
-                .topbar { flex-direction: column; align-items: flex-start; gap: 16px; }
-                .topbar .profile { width: 100%; justify-content: space-between; }
-                .cards { grid-template-columns: 1fr; }
-                .table-wrapper { overflow-x: auto; }
-                .table-wrapper table { width: 100%; min-width: auto; border-spacing: 0; }
-                .table-wrapper thead { display: none; }
-                .topbar h1{ padding-left:60px;}
-                .table-wrapper tbody tr {
-                    display: block;
-                    margin-bottom: 18px;
-                    border: 1px solid rgba(15, 23, 42, 0.08);
-                    border-radius: 20px;
-                    background: white;
-                    box-shadow: none;
-                }
-                .table-wrapper tbody tr td {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    padding: 14px 16px;
-                    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-                }
-                .table-wrapper tbody tr td:last-child { border-bottom: none; }
-                .table-wrapper tbody tr td::before {
-                    content: attr(data-label);
-                    flex: 0 0 34%;
-                    font-weight: 700;
-                    color: var(--muted);
-                    margin-right: 12px;
-                }
-                .table-wrapper tbody tr td .status-pill { margin-left: auto; }
-                .form-card form { gap: 16px; }
-                .panel-header { flex-direction: column; align-items: flex-start; gap: 14px; }
-                .panel-header h2 { margin-bottom: 0; }
-                .card, .panel, .form-card { padding: 20px; }
-                .profile-btn { width: 100%; }
-                .nav-links { gap: 10px; }
-                .nav-links a { padding: 12px 14px; }
-            }
-                .mobile-menu-btn {
+            /* Critical is derived from High, so it is shown read-only. */
+            .critical-box { background: #fdecec; border: none; border-radius: 10px; padding: 13px 10px; text-align: center; }
+            .critical-box .value { font-size: 1.25rem; font-weight: 700; color: var(--text); }
+            .critical-box .caption { display: block; margin-top: 5px; font-size: 0.8rem; color: #475569; }
+
+            /* Sits on the grid's second row, lined up under Description onwards. */
+            .level-badges { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 10px; }
+            .level-badge { flex: 1 1 150px; text-align: center; padding: 11px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; }
+            .badge-low { background: #dcfce7; color: #15803d; }
+            .badge-moderate { background: #fef3c7; color: #b45309; }
+            .badge-high { background: #ffedd5; color: #c2410c; }
+            .badge-critical { background: #fee2e2; color: #b91c1c; }
+
+            .panel-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-top: 22px; }
+            .footer-note { flex: 1 1 420px; display: flex; align-items: flex-start; gap: 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 13px 16px; font-size: 0.83rem; line-height: 1.55; color: #1e40af; }
+            .footer-note svg { flex-shrink: 0; margin-top: 1px; }
+            .save-btn { display: inline-flex; align-items: center; gap: 9px; border: none; border-radius: 10px; padding: 13px 24px; font-family: inherit; font-size: 0.94rem; font-weight: 700; cursor: pointer; background: #15803d; color: #ffffff; transition: transform 0.2s ease, background 0.2s ease; }
+            .save-btn:hover { transform: translateY(-1px); background: #166534; }
+
+            .mobile-menu-btn {
                 display: none;
                 position: fixed;
                 top: 20px;
@@ -181,14 +112,11 @@
                 background: rgba(0, 0, 0, 0.45);
                 opacity: 0;
                 visibility: hidden;
+                pointer-events: none;
                 transition: opacity 0.25s ease, visibility 0.25s ease;
                 z-index: 45;
             }
-
-            .sidebar-overlay.active {
-                opacity: 1;
-                visibility: visible;
-            }
+            .sidebar-overlay.active { opacity: 1; visibility: visible; pointer-events: auto; }
 
             .sidebar-collapse {
                 margin-left: auto;
@@ -203,32 +131,45 @@
             }
             .sidebar-collapse:hover { background: rgba(255, 255, 255, 0.1); }
             .layout.sidebar-collapsed { grid-template-columns: 84px 1fr; }
-            .layout.sidebar-collapsed .sidebar { width: 84px; min-width: 84px; padding: 32px 12px; }
-            .layout.sidebar-collapsed .sidebar .brand { justify-content: center; }
-            .layout.sidebar-collapsed .sidebar .brand .brand-name { display: none; }
-            .layout.sidebar-collapsed .sidebar p,
-            .layout.sidebar-collapsed .sidebar .section-title,
-            .layout.sidebar-collapsed .sidebar .nav-links,
-            .layout.sidebar-collapsed .sidebar form,
-            .layout.sidebar-collapsed .sidebar .logout-btn { display: none !important; }
+
+            @media (max-width: 1180px) {
+                .t-head { display: none; }
+                .t-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+                .period-row::before { display: none; }
+                .period-row .period-name,
+                .period-row .period-desc,
+                .period-row .level-badges { grid-column: 1 / -1; }
+                .t-field .label-sm,
+                .critical-box .label-sm { display: block; }
+            }
             @media (max-width: 900px) {
                 .mobile-menu-btn { display: grid; }
                 .layout { grid-template-columns: 1fr; }
-                .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; transform: translateX(-100%); padding: 24px 18px; z-index: 50; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25); }
+                .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; transform: translateX(-100%); padding: 24px 18px; z-index: 50; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25); transition: transform 0.3s ease; }
                 .layout.sidebar-mobile-open .sidebar { transform: translateX(0); }
-                .layout.sidebar-mobile-open .sidebar-overlay { opacity: 1; visibility: visible; }
                 .layout.sidebar-mobile-open .mobile-menu-btn { display: none; }
+                .main { padding: 80px 16px 20px; }
+                .topbar h1 { font-size: 1.7rem; }
+                .about-card { max-width: none; }
                 .sidebar-collapse { display: inline-flex; }
                 .layout.sidebar-collapsed { grid-template-columns: 1fr; }
                 .layout.sidebar-collapsed .sidebar { width: 280px; min-width: auto; padding: 24px 18px; }
             }
+            @media (max-width: 620px) {
+                .t-grid { grid-template-columns: 1fr; }
+                .panel { padding: 20px 16px; }
+                .save-btn { width: 100%; justify-content: center; }
+            }
+
+            /* Small in-cell labels, only shown once the header strip is hidden. */
+            .label-sm { display: none; font-size: 0.74rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; text-align: center; }
     </style>
 
 </head>
 
 <body>
-    <button type="button" class="mobile-menu-btn" aria-label="Open menu">☰</button>
-    <div class="sidebar-overlay"></div>
+    <button type="button" class="mobile-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="app-sidebar">☰</button>
+    <div class="sidebar-overlay" aria-hidden="true"></div>
 
     <div class="layout">
 
@@ -238,115 +179,130 @@
 
             <div class="topbar">
                 <div>
-                    <h1>Waste Threshold Settings</h1>
-                    <p>Configure alert level thresholds for waste monitoring.</p>
+                    <h1>Threshold Settings</h1>
+                    <p>Configure waste level thresholds for each reporting period.</p>
+                </div>
+
+                <div class="about-card">
+                    <span class="about-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>
+                    </span>
+                    <div>
+                        <h3>About Thresholds</h3>
+                        <p>
+                            Set the maximum limit for each waste level. The system will
+                            automatically determine the level based on the total amount
+                            for the selected period.
+                        </p>
+                    </div>
                 </div>
             </div>
 
             <div class="panel">
 
                 <div class="panel-header">
-                    <h2>Threshold Configuration</h2>
+                    <h2>Thresholds per Reporting Period</h2>
                 </div>
 
-                {% if error %}
-                <div style="
-                    background:#fee2e2;
-                    color:#b91c1c;
-                    padding:14px;
-                    border-radius:14px;
-                    margin-bottom:20px;">
-                    {{ error }}
+                {% if errors %}
+                <div class="errors">
+                    <ul>
+                        {% for message in errors %}
+                        <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
                 </div>
                 {% endif %}
 
-                <div class="form-card">
+                <form method="POST">
 
-                    <form method="POST">
+                    {% csrf_token %}
 
-                        {% csrf_token %}
+                    <div class="t-grid t-head">
+                        <span>Reporting Period</span>
+                        <span>Description</span>
+                        <span>Low (Max)</span>
+                        <span>Moderate (Max)</span>
+                        <span>High (Max)</span>
+                        <span>Critical (Min)</span>
+                    </div>
 
-                        <p>
-                            <label><strong>Low Threshold Maximum</strong></label>
-                            <select name="low_max" id="low_max">
+                    {% for threshold in thresholds %}
 
-                                {% for i in threshold_choices %}
-                                    <option value="{{ i }}"
-                                        {% if i == threshold.low_max %}selected{% endif %}>
-                                        {{ i }}
-                                    </option>
-                                {% endfor %}
+                    <div class="period-row" data-prefix="{{ threshold.key }}">
 
-                            </select>
-                        </p>
+                        <div class="t-grid">
 
-                        <p>
-                            <label><strong>Moderate Threshold Maximum</strong></label>
-                            <select name="moderate_max" id="moderate_max">
+                            <div class="period-name" style="color: {{ threshold.accent }};">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M7.5 14h.01M12 14h.01M16.5 14h.01M7.5 17.5h.01M12 17.5h.01"/></svg>
+                                {{ threshold.label }}
+                            </div>
 
-                                {% for i in threshold_choices %}
-                                    <option value="{{ i }}"
-                                        {% if i == threshold.moderate_max %}selected{% endif %}>
-                                        {{ i }}
-                                    </option>
-                                {% endfor %}
+                            <div class="period-desc">{{ threshold.description }}</div>
 
-                            </select>
-                        </p>
+                            <div class="t-field">
+                                <span class="label-sm">Low (Max)</span>
+                                <input type="number" min="0" step="0.01" required
+                                       id="{{ threshold.key }}_low_max"
+                                       name="{{ threshold.key }}_low_max"
+                                       value="{{ threshold.low_max|floatformat:'-2' }}">
+                                <span class="hint" id="{{ threshold.key }}_low_range">0 - {{ threshold.low_text }}</span>
+                            </div>
 
-                        <p>
-                            <label><strong>High Threshold Maximum</strong></label>
-                            <select name="high_max" id="high_max">
+                            <div class="t-field">
+                                <span class="label-sm">Moderate (Max)</span>
+                                <input type="number" min="0" step="0.01" required
+                                       id="{{ threshold.key }}_moderate_max"
+                                       name="{{ threshold.key }}_moderate_max"
+                                       value="{{ threshold.moderate_max|floatformat:'-2' }}">
+                                <span class="hint" id="{{ threshold.key }}_moderate_range">{{ threshold.moderate_min }} - {{ threshold.moderate_text }}</span>
+                            </div>
 
-                                {% for i in threshold_choices %}
-                                    <option value="{{ i }}"
-                                        {% if i == threshold.high_max %}selected{% endif %}>
-                                        {{ i }}
-                                    </option>
-                                {% endfor %}
+                            <div class="t-field">
+                                <span class="label-sm">High (Max)</span>
+                                <input type="number" min="0" step="0.01" required
+                                       id="{{ threshold.key }}_high_max"
+                                       name="{{ threshold.key }}_high_max"
+                                       value="{{ threshold.high_max|floatformat:'-2' }}">
+                                <span class="hint" id="{{ threshold.key }}_high_range">{{ threshold.high_min }} - {{ threshold.high_text }}</span>
+                            </div>
 
-                            </select>
-                        </p>
+                            <div class="critical-box">
+                                <span class="label-sm">Critical (Min)</span>
+                                <div class="value" id="{{ threshold.key }}_critical_value">{{ threshold.critical_min }}+</div>
+                                <span class="caption">High Max +</span>
+                            </div>
 
-                        <div style="
-                            background:#f7fbf6;
-                            border:1px solid rgba(20,152,79,0.15);
-                            border-radius:16px;
-                            padding:18px;
-                            margin-top:10px;
-                            margin-bottom:20px;
-                        ">
-
-                            <p><strong>LOW:</strong> 0 - <span id="low_display">{{ threshold.low_max }}</span></p>
-
-                            <p>
-                                <strong>MODERATE:</strong>
-                                <span id="moderate_min">{{ threshold.low_max }}</span>
-                                -
-                                {{ threshold.moderate_max }}
-                            </p>
-
-                            <p>
-                                <strong>HIGH:</strong>
-                                <span id="high_min">{{ threshold.moderate_max }}</span>
-                                -
-                                {{ threshold.high_max }}
-                            </p>
-
-                            <p>
-                                <strong>CRITICAL:</strong>
-                                <span id="critical_min">{{ threshold.high_max }}</span>+
-                            </p>
+                            <div class="level-badges">
+                                <span class="level-badge badge-low" id="{{ threshold.key }}_badge_low">LOW: 0 - {{ threshold.low_text }}</span>
+                                <span class="level-badge badge-moderate" id="{{ threshold.key }}_badge_moderate">MODERATE: {{ threshold.moderate_min }} - {{ threshold.moderate_text }}</span>
+                                <span class="level-badge badge-high" id="{{ threshold.key }}_badge_high">HIGH: {{ threshold.high_min }} - {{ threshold.high_text }}</span>
+                                <span class="level-badge badge-critical" id="{{ threshold.key }}_badge_critical">CRITICAL: {{ threshold.critical_min }}+</span>
+                            </div>
 
                         </div>
 
-                        <button type="submit" class="add-btn">
-                            Save Thresholds
+                    </div>
+
+                    {% endfor %}
+
+                    <div class="panel-footer">
+                        <p class="footer-note">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.3.3.5.7.5 1.1h6c0-.4.2-.8.5-1.1A6 6 0 0 0 12 3z"/></svg>
+                            <span>
+                                <strong>Note:</strong> The system will use the appropriate
+                                thresholds based on the selected reporting period in the
+                                dashboard and reports.
+                            </span>
+                        </p>
+
+                        <button type="submit" class="save-btn">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>
+                            Save All Thresholds
                         </button>
+                    </div>
 
-                    </form>
-
-                </div>
+                </form>
 
             </div>
 
@@ -355,38 +311,55 @@
     </div>
 
     <script>
+    (function () {
 
-        function updateRanges() {
-
-            const low =
-                document.getElementById('low_max').value;
-
-            const moderate =
-                document.getElementById('moderate_max').value;
-
-            const high =
-                document.getElementById('high_max').value;
-
-            document.getElementById('low_display').textContent = low;
-
-            document.getElementById('moderate_min').textContent = low;
-
-            document.getElementById('high_min').textContent = moderate;
-
-            document.getElementById('critical_min').textContent = high;
+        function formatAmount(value) {
+            var rounded = Math.round(value * 100) / 100;
+            return rounded.toLocaleString('en-US', { maximumFractionDigits: 2 });
         }
 
-        document.getElementById('low_max')
-            .addEventListener('change', updateRanges);
+        function updateRow(row) {
+            var prefix = row.dataset.prefix;
 
-        document.getElementById('moderate_max')
-            .addEventListener('change', updateRanges);
+            function valueOf(field) {
+                var input = document.getElementById(prefix + '_' + field);
+                var number = parseFloat(input.value);
+                return isNaN(number) ? 0 : number;
+            }
 
-        document.getElementById('high_max')
-            .addEventListener('change', updateRanges);
+            function setText(id, text) {
+                var node = document.getElementById(id);
+                if (node) node.textContent = text;
+            }
 
-        updateRanges();
+            var low = valueOf('low_max');
+            var moderate = valueOf('moderate_max');
+            var high = valueOf('high_max');
 
+            var lowRange = '0 - ' + formatAmount(low);
+            var moderateRange = formatAmount(low + 0.01) + ' - ' + formatAmount(moderate);
+            var highRange = formatAmount(moderate + 0.01) + ' - ' + formatAmount(high);
+            var criticalMin = formatAmount(high + 0.01) + '+';
+
+            setText(prefix + '_low_range', lowRange);
+            setText(prefix + '_moderate_range', moderateRange);
+            setText(prefix + '_high_range', highRange);
+            setText(prefix + '_critical_value', criticalMin);
+
+            setText(prefix + '_badge_low', 'LOW: ' + lowRange);
+            setText(prefix + '_badge_moderate', 'MODERATE: ' + moderateRange);
+            setText(prefix + '_badge_high', 'HIGH: ' + highRange);
+            setText(prefix + '_badge_critical', 'CRITICAL: ' + criticalMin);
+        }
+
+        document.querySelectorAll('.period-row').forEach(function (row) {
+            row.querySelectorAll('input[type="number"]').forEach(function (input) {
+                input.addEventListener('input', function () { updateRow(row); });
+            });
+            updateRow(row);
+        });
+
+    })();
     </script>
 
     <script>
@@ -396,34 +369,58 @@
         const menuBtn = document.querySelector('.mobile-menu-btn');
         const overlay = document.querySelector('.sidebar-overlay');
         const collapseBtn = document.querySelector('.sidebar-collapse');
+        const sidebarLinks = document.querySelectorAll('.sidebar a');
 
-        menuBtn.addEventListener('click', function () {
-            layout.classList.add('sidebar-mobile-open');
-            overlay.classList.add('active');
-            menuBtn.classList.add('hidden');
-        });
-
-        overlay.addEventListener('click', function () {
-            layout.classList.remove('sidebar-mobile-open');
-            overlay.classList.remove('active');
-            menuBtn.classList.remove('hidden');
-        });
-
-        collapseBtn.addEventListener('click', function () {
-
-            if (window.innerWidth <= 900) {
-
-                layout.classList.remove('sidebar-mobile-open');
-                overlay.classList.remove('active');
-                menuBtn.classList.remove('hidden');
-
-            } else {
-
-                layout.classList.toggle('sidebar-collapsed');
-
+        function setMobileSidebar(open) {
+            if (!layout) return;
+            layout.classList.toggle('sidebar-mobile-open', open);
+            if (overlay) {
+                overlay.classList.toggle('active', open);
+                overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
             }
+            if (menuBtn) {
+                menuBtn.classList.toggle('hidden', open);
+                menuBtn.setAttribute('aria-expanded', String(open));
+            }
+        }
 
+        if (menuBtn) {
+            menuBtn.addEventListener('click', function () {
+                setMobileSidebar(!layout.classList.contains('sidebar-mobile-open'));
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function () {
+                setMobileSidebar(false);
+            });
+        }
+
+        sidebarLinks.forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (window.innerWidth <= 900) {
+                    setMobileSidebar(false);
+                }
+            });
         });
+
+        if (collapseBtn) {
+            collapseBtn.addEventListener('click', function () {
+                if (window.innerWidth <= 900) {
+                    setMobileSidebar(false);
+                } else {
+                    layout.classList.toggle('sidebar-collapsed');
+                }
+            });
+        }
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 900) {
+                setMobileSidebar(false);
+            }
+        });
+
+        setMobileSidebar(false);
 
     });
     </script>
