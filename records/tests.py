@@ -154,10 +154,12 @@ class JanitorAuditLogTests(TestCase):
         self.assertEqual(log.performed_by, self.janitor)
         self.assertEqual(log.action, 'Submitted Waste Record')
         self.assertEqual(log.target, 'Main Building')
-        self.assertIn('3 bags', log.details)
-        self.assertIn('No photo attached', log.content)
+        self.assertEqual(
+            log.details,
+            'Waste With Plastic · 3 Bags Total Submitted · No photo attached',
+        )
 
-    def test_editing_a_record_logs_the_changed_fields(self):
+    def test_editing_a_record_logs_the_edited_values(self):
         self.client.force_login(self.janitor)
         self.submit_record()
 
@@ -176,9 +178,10 @@ class JanitorAuditLogTests(TestCase):
 
         log = AuditLog.objects.filter(action='Edited Waste Record').get()
         self.assertEqual(log.target, 'E-Library')
-        self.assertIn('Area: Main Building → E-Library', log.content)
-        self.assertIn('Bags: 3 → 7', log.content)
-        self.assertNotIn('Waste Type', log.content)
+        self.assertEqual(
+            log.details,
+            'Waste With Plastic · 7 Bags Total Submitted · No photo attached',
+        )
 
     def test_deleting_a_record_is_logged(self):
         self.client.force_login(self.janitor)
@@ -190,7 +193,7 @@ class JanitorAuditLogTests(TestCase):
         log = AuditLog.objects.filter(action='Deleted Waste Record').get()
         self.assertEqual(log.performed_by, self.janitor)
         self.assertEqual(log.target, 'Main Building')
-        self.assertIn('3 bags', log.details)
+        self.assertIn('3 Bags Total Submitted', log.details)
 
     def test_supervisor_sees_janitor_activity_only(self):
         AuditLog.objects.create(
@@ -212,6 +215,41 @@ class JanitorAuditLogTests(TestCase):
 
         actions = [log.action for log in response.context['audit_entries']]
         self.assertEqual(actions, ['Submitted Waste Record'])
+
+    def test_janitor_log_renames_target_and_drops_the_content_column(self):
+        AuditLog.objects.create(
+            performed_by=self.janitor,
+            action='Submitted Waste Record',
+            target='Main Building',
+        )
+
+        self.client.force_login(self.supervisor)
+
+        html = self.client.get(reverse('janitor_audit_log')).content.decode()
+
+        self.assertIn('<th>Assigned Area</th>', html)
+        self.assertNotIn('<th>Target</th>', html)
+        self.assertNotIn('<th>Content</th>', html)
+
+    def test_head_supervisor_log_keeps_target_and_content(self):
+        head = get_user_model().objects.create_user(
+            username='HSV-0393', password='secret123'
+        )
+        Profile.objects.create(
+            user=head, role='Head Supervisor', employee_id='HSV-0393'
+        )
+        AuditLog.objects.create(
+            performed_by=self.supervisor,
+            action='Sent Advisory Message',
+            target='Main Building',
+            content='Urgent: Critical Waste Level',
+        )
+
+        self.client.force_login(head)
+        html = self.client.get(reverse('audit_log')).content.decode()
+
+        self.assertIn('<th>Target</th>', html)
+        self.assertIn('<th>Content</th>', html)
 
     def test_janitor_cannot_open_the_supervisor_audit_log(self):
         self.client.force_login(self.janitor)

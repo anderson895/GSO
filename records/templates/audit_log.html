@@ -385,9 +385,11 @@
                                     <th>Date &amp; Time</th>
                                     <th>Performed By</th>
                                     <th>Action</th>
-                                    <th>Target</th>
+                                    <th>{{ target_label }}</th>
                                     <th>Details</th>
-                                    <th>Content</th>
+                                    {% if show_content %}
+                                        <th>Content</th>
+                                    {% endif %}
                                 </tr>
                             </thead>
 
@@ -424,13 +426,15 @@
                                                 N/A
                                             {% endif %}
                                         </td>
-                                        <td class="details-text">
-                                            {% if log.content %}
-                                                {{ log.content }}
-                                            {% else %}
-                                                —
-                                            {% endif %}
-                                        </td>
+                                        {% if show_content %}
+                                            <td class="details-text">
+                                                {% if log.content %}
+                                                    {{ log.content }}
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </td>
+                                        {% endif %}
 
                                     </tr>
 

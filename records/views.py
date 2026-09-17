@@ -367,62 +367,38 @@ def aggregate_records(records, reporting_period):
 MANILA_TZ = ZoneInfo('Asia/Manila')
 
 
-def describe_waste_record(record):
-    """One-line summary of a waste record, used as audit log details."""
+def format_submitted_at(record):
+    """Submission date and time of a waste record, in Philippine time."""
 
     submitted_at = record.submitted_at
 
-    if submitted_at:
-        submitted_at = timezone.localtime(submitted_at, MANILA_TZ)
-        submitted_date = submitted_at.strftime('%b %d, %Y')
-        submitted_time = submitted_at.strftime('%I:%M %p').lstrip('0')
-    else:
-        submitted_date = 'Unknown Date'
-        submitted_time = 'Unknown Time'
+    if not submitted_at:
+        return 'Unknown Date', 'Unknown Time'
+
+    submitted_at = timezone.localtime(submitted_at, MANILA_TZ)
 
     return (
-        f"{record.waste_type} · "
-        f"{record.amount} bags · "
-        f"{submitted_date} · "
-        f"{submitted_time}"
+        submitted_at.strftime('%b %d, %Y'),
+        submitted_at.strftime('%I:%M %p').lstrip('0'),
     )
 
 
-def waste_record_fields(record):
-    """Editable values of a waste record, keyed by their display label.
+def describe_waste_record(record):
+    """One-line summary of a waste record, used as audit log details."""
 
-    Comparing two of these dictionaries is how an edit is turned into a
-    readable list of changes for the audit log.
-    """
+    bag_label = 'Bag' if record.amount == 1 else 'Bags'
 
-    return {
-        'Area': str(record.area),
-        'Waste Type': record.waste_type,
-        'Bags': str(record.amount),
-        'Date': record.date.strftime('%b %d, %Y') if record.date else 'N/A',
-        'Time': (
-            record.time.strftime('%I:%M %p').lstrip('0')
-            if record.time
-            else 'N/A'
-        ),
-        'Photo': (
-            record.photo.name.split('/')[-1]
-            if record.photo
-            else 'No photo'
-        ),
-    }
+    photo_note = (
+        'Photo attached'
+        if record.photo
+        else 'No photo attached'
+    )
 
-
-def describe_field_changes(before, after):
-    """Human readable diff of two waste_record_fields() dictionaries."""
-
-    changes = [
-        f"{label}: {value} → {after[label]}"
-        for label, value in before.items()
-        if value != after[label]
-    ]
-
-    return ' · '.join(changes) if changes else 'No changes made'
+    return (
+        f"{record.waste_type} · "
+        f"{record.amount} {bag_label} Total Submitted · "
+        f"{photo_note}"
+    )
 
 
 def build_audit_entries(actions):
@@ -468,18 +444,11 @@ def waste_list(request):
             record.alert_level, _ = get_level_action(record.amount, "daily")
             record.save()
 
-            photo_note = (
-                'Photo attached'
-                if record.photo
-                else 'No photo attached'
-            )
-
             AuditLog.objects.create(
                 performed_by=request.user,
                 action='Submitted Waste Record',
                 target=record.area.area_name,
                 details=describe_waste_record(record),
-                content=f"{record.alert_level} waste level · {photo_note}",
             )
 
             return redirect('waste_list')
@@ -661,9 +630,6 @@ def edit_record(request, pk):
     record = get_object_or_404(WasteRecord, id=pk, user=request.user)
 
     if request.method == 'POST':
-        # Snapshot the record first -- binding the form mutates the instance.
-        previous_fields = waste_record_fields(record)
-
         form = EditWasteForm(request.POST, request.FILES, instance=record)
         if form.is_valid():
             edited_record = form.save(commit=False)
@@ -682,10 +648,6 @@ def edit_record(request, pk):
                 action='Edited Waste Record',
                 target=edited_record.area.area_name,
                 details=describe_waste_record(edited_record),
-                content=describe_field_changes(
-                    previous_fields,
-                    waste_record_fields(edited_record),
-                ),
             )
 
             return redirect('waste_list')
@@ -711,7 +673,6 @@ def delete_record(request, pk):
         action='Deleted Waste Record',
         target=area_name,
         details=details,
-        content='Record removed from the system',
     )
 
     return redirect('waste_list')
@@ -1045,7 +1006,15 @@ def building_status(request):
                     else 'Unknown Area'
                 )
 
-                details = f"{area_name} · {describe_waste_record(report)}"
+                submitted_date, submitted_time = format_submitted_at(report)
+
+                details = (
+                    f"{area_name} · "
+                    f"{report.waste_type} · "
+                    f"{report.amount} bags · "
+                    f"{submitted_date} · "
+                    f"{submitted_time}"
+                )
 
                 feedback = (
                     f"{rating_display} - {comment_display}"
@@ -1216,6 +1185,8 @@ def audit_log(request):
     return render(request, 'audit_log.html', {
         'audit_entries': build_audit_entries(AuditLog.SUPERVISOR_ACTIONS),
         'tracked_role': 'Supervisor',
+        'target_label': 'Target',
+        'show_content': True,
     })
 
 
@@ -1229,6 +1200,8 @@ def janitor_audit_log(request):
     return render(request, 'audit_log.html', {
         'audit_entries': build_audit_entries(AuditLog.JANITOR_ACTIONS),
         'tracked_role': 'Lead Janitor',
+        'target_label': 'Assigned Area',
+        'show_content': False,
     })
 
 
