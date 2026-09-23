@@ -211,7 +211,7 @@ class JanitorAuditLogTests(TestCase):
         response = self.client.get(reverse('janitor_audit_log'))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['tracked_role'], 'Lead Janitor')
+        self.assertTemplateUsed(response, 'janitor_audit_log.html')
 
         actions = [log.action for log in response.context['audit_entries']]
         self.assertEqual(actions, ['Submitted Waste Record'])

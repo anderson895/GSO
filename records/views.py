@@ -1184,9 +1184,6 @@ def audit_log(request):
 
     return render(request, 'audit_log.html', {
         'audit_entries': build_audit_entries(AuditLog.SUPERVISOR_ACTIONS),
-        'tracked_role': 'Supervisor',
-        'target_label': 'Target',
-        'show_content': True,
     })
 
 
@@ -1197,11 +1194,8 @@ def janitor_audit_log(request):
     if request.user.profile.role != 'Supervisor':
         return redirect('waste_list')
 
-    return render(request, 'audit_log.html', {
+    return render(request, 'janitor_audit_log.html', {
         'audit_entries': build_audit_entries(AuditLog.JANITOR_ACTIONS),
-        'tracked_role': 'Lead Janitor',
-        'target_label': 'Assigned Area',
-        'show_content': False,
     })
 
 

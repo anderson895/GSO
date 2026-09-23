@@ -378,23 +378,47 @@
         @media (max-width: 900px) {
             .login-card {
                 grid-template-columns: 1fr;
-                min-height: auto;
+                min-height: 100vh;
+                /* Rows must hug their content -- stretching them to fill a tall
+                   viewport tears a gap between the branding and the form. */
+                align-content: start;
             }
-            .brand-panel { padding: 52px 32px 40px; }
-            .brand-logo { width: 120px; height: 120px; }
-            .brand-office { font-size: 28px; }
-            .deco-building { width: 66%; opacity: 0.45; }
+
+            /* Type scales with the screen so the wordmark keeps to one line
+               instead of breaking after "General Services". */
+            .brand-panel { padding: 46px 24px 28px; }
+            .brand-logo { width: clamp(96px, 26vw, 132px); margin-bottom: 10px; }
+            .brand-uni { font-size: clamp(14px, 4.2vw, 18px); }
+            .brand-office { font-size: clamp(20px, 6.4vw, 30px); }
+            .brand-system { font-size: clamp(15px, 4.6vw, 20px); }
+            .brand-rule { width: 130px; margin: 16px 0; }
+            .brand-sprout { width: 38px; margin-bottom: 12px; }
+            .brand-tagline { font-size: clamp(14px, 4vw, 16px); line-height: 1.6; }
+
+            /* The photo is cropped for a wide desktop panel. Stacked on a phone
+               it lands under the form as a block with a hard right edge, so run
+               it full width and dial it back to a watermark. */
+            .deco-building {
+                width: 100%;
+                height: 42%;
+                opacity: 0.18;
+            }
+
             .deco-curve, .deco-bin { display: none; }
-            .form-side { padding: 8px 24px 48px; }
-            .form-card { box-shadow: none; max-width: 520px; padding: 8px 4px 0; }
-            .welcome { font-size: 32px; }
+
+            .form-side { padding: 0 24px 44px; }
+            .form-card { box-shadow: none; max-width: 520px; padding: 0; }
+            .welcome { font-size: clamp(26px, 7.6vw, 34px); }
+            .welcome-sub { font-size: 15px; margin-bottom: 26px; }
         }
 
         @media (max-width: 480px) {
-            body { padding: 12px; }
-            .login-card { border-radius: 20px; }
-            .brand-panel { padding: 44px 22px 32px; }
-            .deco-leaves { width: 150px; }
+            /* Full bleed -- the old 12px body inset only ate usable width. */
+            .brand-panel { padding: 38px 20px 24px; }
+            .deco-leaves { width: 150px; max-width: 40%; }
+            .form-side { padding: 0 20px 36px; }
+            .field { margin-bottom: 20px; }
+            .form-row { margin: 4px 0 24px; }
         }
     </style>
 </head>

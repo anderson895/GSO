@@ -161,7 +161,7 @@
 
         .audit-table {
             width: 100%;
-            min-width: 900px;
+            min-width: 780px;
             border-collapse: collapse;
         }
 
@@ -213,7 +213,7 @@
             min-width: 210px;
         }
 
-        .target-name {
+        .area-name {
             color: #39483e;
             font-weight: 600;
             white-space: nowrap;
@@ -347,14 +347,14 @@
 
     <div class="layout">
 
-        {% include 'partials/admin_sidebar.html' with active='audit_log' %}
+        {% include 'partials/staff_sidebar.html' with active='audit_log' %}
 
         <main class="main">
 
             <div class="page-header">
                 <div>
                     <h1>Audit Log</h1>
-                    <p>Track Supervisor activities within the system.</p>
+                    <p>Track Lead Janitor activities within the system.</p>
                 </div>
             </div>
 
@@ -381,9 +381,8 @@
                                     <th>Date &amp; Time</th>
                                     <th>Performed By</th>
                                     <th>Action</th>
-                                    <th>Target</th>
+                                    <th>Assigned Area</th>
                                     <th>Details</th>
-                                    <th>Content</th>
                                 </tr>
                             </thead>
 
@@ -409,7 +408,7 @@
                                             {{ log.action }}
                                         </td>
 
-                                        <td class="target-name">
+                                        <td class="area-name">
                                             {{ log.target }}
                                         </td>
 
@@ -418,13 +417,6 @@
                                                 {{ log.details }}
                                             {% else %}
                                                 N/A
-                                            {% endif %}
-                                        </td>
-                                        <td class="details-text">
-                                            {% if log.content %}
-                                                {{ log.content }}
-                                            {% else %}
-                                                —
                                             {% endif %}
                                         </td>
 
@@ -459,7 +451,7 @@
                         </div>
 
                         <h3>No Audit Records Yet</h3>
-                        <p>Supervisor activities will appear here.</p>
+                        <p>Lead Janitor activities will appear here.</p>
 
                     </div>
 
