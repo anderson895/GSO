@@ -429,19 +429,31 @@ def build_audit_entries(actions):
 @csrf_protect
 def waste_list(request):
     form = WasteForm()
+
     # Read filter selections from query params so both roles can use them
     selected_area = request.GET.get('area', 'All')
     selected_type = request.GET.get('type', 'All')
-    type_choices = [choice[0] for choice in WasteRecord.WASTE_TYPE_CHOICES]
+    type_choices = [
+        choice[0]
+        for choice in WasteRecord.WASTE_TYPE_CHOICES
+    ]
 
     if request.method == 'POST':
         if request.user.profile.role != 'Lead Janitor':
             return redirect('waste_list')
-        form = WasteForm(request.POST, request.FILES)
+
+        form = WasteForm(
+            request.POST,
+            request.FILES
+        )
+
         if form.is_valid():
             record = form.save(commit=False)
             record.user = request.user
-            record.alert_level, _ = get_level_action(record.amount, "daily")
+            record.alert_level, _ = get_level_action(
+                record.amount,
+                "daily"
+            )
             record.save()
 
             AuditLog.objects.create(
@@ -449,59 +461,94 @@ def waste_list(request):
                 action='Submitted Waste Record',
                 target=record.area.area_name,
                 details=describe_waste_record(record),
+                waste_record=record,
+                waste_record_id_snapshot=f'WR-{record.id:03d}',
             )
-
             return redirect('waste_list')
 
     if request.user.profile.role == 'Lead Janitor':
-        records = WasteRecord.objects.filter(user=request.user).order_by('-submitted_at')
-        
+        records = WasteRecord.objects.filter(
+            user=request.user
+        ).order_by('-submitted_at')
+
         if selected_area != 'All':
-            records = records.filter(area__area_name=selected_area)
+            records = records.filter(
+                area__area_name=selected_area
+            )
+
         if selected_type != 'All':
-            records = records.filter(waste_type=selected_type)
+            records = records.filter(
+                waste_type=selected_type
+            )
 
     else:
-        records = WasteRecord.objects.all().order_by('-submitted_at')
+        records = WasteRecord.objects.all().order_by(
+            '-submitted_at'
+        )
 
         if selected_area != 'All':
-            records = records.filter(area__area_name=selected_area)
+            records = records.filter(
+                area__area_name=selected_area
+            )
+
         if selected_type != 'All':
-            records = records.filter(waste_type=selected_type)
-    
+            records = records.filter(
+                waste_type=selected_type
+            )
+
     total_records = records.count()
-    total_waste_all = records.aggregate(total=Sum('amount'))['total'] or 0
+
+    total_waste_all = records.aggregate(
+        total=Sum('amount')
+    )['total'] or 0
 
     # Calculate month-over-month change
     today = date.today()
     current_month_start = today.replace(day=1)
     last_month_end = current_month_start - timedelta(days=1)
     last_month_start = last_month_end.replace(day=1)
-    
+
     # Get current month's total
     if request.user.profile.role == 'Lead Janitor':
-        # Apply janitor filters to month totals as well
         current_query = WasteRecord.objects.filter(
             user=request.user,
             date__gte=current_month_start,
             date__lte=today
         )
+
         if selected_area != 'All':
-            current_query = current_query.filter(area__area_name=selected_area)
+            current_query = current_query.filter(
+                area__area_name=selected_area
+            )
+
         if selected_type != 'All':
-            current_query = current_query.filter(waste_type=selected_type)
-        current_month_total = current_query.aggregate(total=Sum('amount'))['total'] or 0
+            current_query = current_query.filter(
+                waste_type=selected_type
+            )
+
+        current_month_total = current_query.aggregate(
+            total=Sum('amount')
+        )['total'] or 0
 
         last_query = WasteRecord.objects.filter(
             user=request.user,
             date__gte=last_month_start,
             date__lt=current_month_start
         )
+
         if selected_area != 'All':
-            last_query = last_query.filter(area__area_name=selected_area)
+            last_query = last_query.filter(
+                area__area_name=selected_area
+            )
+
         if selected_type != 'All':
-            last_query = last_query.filter(waste_type=selected_type)
-        last_month_total = last_query.aggregate(total=Sum('amount'))['total'] or 0
+            last_query = last_query.filter(
+                waste_type=selected_type
+            )
+
+        last_month_total = last_query.aggregate(
+            total=Sum('amount')
+        )['total'] or 0
 
     else:
         current_query = WasteRecord.objects.filter(
@@ -510,91 +557,107 @@ def waste_list(request):
         )
 
         if selected_area != 'All':
-            current_query = current_query.filter(area__area_name=selected_area)
+            current_query = current_query.filter(
+                area__area_name=selected_area
+            )
+
         if selected_type != 'All':
-            current_query = current_query.filter(waste_type=selected_type)
-        current_month_total = current_query.aggregate(total=Sum('amount'))['total'] or 0
-        
+            current_query = current_query.filter(
+                waste_type=selected_type
+            )
+
+        current_month_total = current_query.aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+
         last_query = WasteRecord.objects.filter(
             date__gte=last_month_start,
             date__lt=current_month_start
         )
 
         if selected_area != 'All':
-            last_query = last_query.filter(area__area_name=selected_area)
+            last_query = last_query.filter(
+                area__area_name=selected_area
+            )
+
         if selected_type != 'All':
-            last_query = last_query.filter(waste_type=selected_type)
-        last_month_total = last_query.aggregate(total=Sum('amount'))['total'] or 0
-    
+            last_query = last_query.filter(
+                waste_type=selected_type
+            )
+
+        last_month_total = last_query.aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+
     # Calculate percentage change
     has_previous_data = last_query.exists()
+
     if not has_previous_data:
         percentage_change = None
         change_status = 'No previous data'
         is_increased = False
         change_indicator = 'neutral'
         change_display = 'No previous data'
+
     elif current_month_total == last_month_total:
         percentage_change = 0
         change_status = 'No Change'
         is_increased = False
         change_indicator = 'neutral'
         change_display = '0.0%'
+
     elif current_month_total > last_month_total:
-        percentage_change = ((current_month_total - last_month_total) / last_month_total) * 100
+        percentage_change = (
+            (current_month_total - last_month_total)
+            / last_month_total
+        ) * 100
+
         change_status = 'Increased'
         is_increased = True
         change_indicator = 'negative'
         change_display = f'{abs(percentage_change):.1f}%'
+
     else:
-        percentage_change = ((last_month_total - current_month_total) / last_month_total) * 100
+        percentage_change = (
+            (last_month_total - current_month_total)
+            / last_month_total
+        ) * 100
+
         change_status = 'Decreased'
         is_increased = False
         change_indicator = 'positive'
         change_display = f'{abs(percentage_change):.1f}%'
 
-    grouped_reports = {}
-    for r in records:
-        report_key = (r.user_id, r.area_id, r.date, r.time)
-        if report_key not in grouped_reports:
-            grouped_reports[report_key] = {
-                'id': r.id,
-                'area': r.area,
-                'date': r.date,
-                'time': r.time,
-                'amount': 0,
-                'waste_type': r.waste_type,
-                'alert_level': r.alert_level,
-                'photo_url': r.photo.url if r.photo else None,
-                'janitor': r.user.username if r.user else 'Unknown',
-                'submitted_at': r.submitted_at,
-                'coordinator_rating': r.coordinator_rating,
-                'coordinator_comment': r.coordinator_comment,
-            }
-
-        grouped_reports[report_key]['amount'] += r.amount or 0
-
+    # Keep every WasteRecord as an individual submission.
+    # Do NOT group records by user, area, date, or time.
     data = []
-    for group in grouped_reports.values():
+
+    for r in records:
         level, action = get_level_action(
-            group['amount'],
+            r.amount,
             "daily",
         )
+
         data.append({
-            'id': group['id'],
-            'area': group['area'],
-            'date': group['date'],
-            'time': group['time'],
-            'amount': group['amount'],
-            'waste_type': group['waste_type'],
+            'id': r.id,
+            'waste_record_id': f'WR-{r.id:03d}',
+            'area': r.area,
+            'date': r.date,
+            'time': r.time,
+            'amount': r.amount,
+            'waste_type': r.waste_type,
             'alert_level': level,
             'action': action,
-            'photo_url': group['photo_url'],
-            'janitor': group['janitor'],
-            'submitted_at': group['submitted_at'],
-            'coordinator_rating': group['coordinator_rating'],
-            'coordinator_comment': group['coordinator_comment'],
-            'bags_submitted': group['amount'],
+            'photo_url': r.photo.url if r.photo else None,
+            'janitor': (
+                r.user.username
+                if r.user
+                else 'Unknown'
+            ),
+            'submitted_at': r.submitted_at,
+            'coordinator_rating': r.coordinator_rating,
+            'coordinator_comment': r.coordinator_comment,
+            'bags_submitted': r.amount,
         })
 
     threshold = get_threshold_settings("daily")
@@ -604,76 +667,207 @@ def waste_list(request):
         'data': data,
         'total_records': total_records,
         'total_waste_all': total_waste_all,
-        'percentage_change': abs(percentage_change) if percentage_change is not None else None,
+        'percentage_change': (
+            abs(percentage_change)
+            if percentage_change is not None
+            else None
+        ),
         'is_increased': is_increased,
         'change_status': change_status,
         'change_indicator': change_indicator,
         'change_display': change_display,
         'selected_type': selected_type,
-        'area_choices': Area.objects.values_list('area_name', flat=True),
+        'area_choices': Area.objects.values_list(
+            'area_name',
+            flat=True
+        ),
         'threshold': threshold,
-        'level_legend': build_level_legend(STATUS_LEVEL_COLORS, "daily",),
+        'level_legend': build_level_legend(
+            STATUS_LEVEL_COLORS,
+            "daily",
+        ),
     }
 
-    if request.user.profile.role in ('Supervisor', 'Lead Janitor'):
+    if request.user.profile.role in (
+        'Supervisor',
+        'Lead Janitor'
+    ):
         context['selected_area'] = selected_area
         context['type_choices'] = type_choices
         context['selected_type'] = selected_type
 
-    return render(request, 'waste_list.html', context)
+    return render(
+        request,
+        'waste_list.html',
+        context
+    )
 
 
 @login_required
 @csrf_protect
 @janitor_required
 def edit_record(request, pk):
-    record = get_object_or_404(WasteRecord, id=pk, user=request.user)
+    record = get_object_or_404(
+        WasteRecord,
+        id=pk,
+        user=request.user
+    )
 
     if request.method == 'POST':
-        form = EditWasteForm(request.POST, request.FILES, instance=record)
+        # Capture the original values before the form changes the record.
+        original_area = record.area.area_name
+        original_waste_type = record.waste_type
+        original_amount = record.amount
+        original_date = record.date
+        original_time = record.time
+        original_photo = record.photo.name if record.photo else None
+
+        form = EditWasteForm(
+            request.POST,
+            request.FILES,
+            instance=record
+        )
+
         if form.is_valid():
             edited_record = form.save(commit=False)
 
-            # Handle the photo clear checkbox from the file input widget.
-            if form.cleaned_data.get('photo') is False:
-                if edited_record.photo:
-                    edited_record.photo.delete(save=False)
-                edited_record.photo = None
+            changes = []
 
-            edited_record.alert_level, _ = get_level_action(edited_record.amount, "daily")
-            edited_record.save()
+            # Area
+            new_area = edited_record.area.area_name
 
-            AuditLog.objects.create(
-                performed_by=request.user,
-                action='Edited Waste Record',
-                target=edited_record.area.area_name,
-                details=describe_waste_record(edited_record),
+            if original_area != new_area:
+                changes.append(
+                    f"Changed area from {original_area} to {new_area}"
+                )
+
+            # Waste type
+            if original_waste_type != edited_record.waste_type:
+                changes.append(
+                    "Changed waste type from "
+                    f"{original_waste_type} to "
+                    f"{edited_record.waste_type}"
+                )
+
+            # Amount
+            if original_amount != edited_record.amount:
+                changes.append(
+                    "Changed waste amount from "
+                    f"{original_amount} bags to "
+                    f"{edited_record.amount} bags"
+                )
+
+            # Date
+            if original_date != edited_record.date:
+                changes.append(
+                    "Changed date from "
+                    f"{original_date.strftime('%B %d, %Y')} to "
+                    f"{edited_record.date.strftime('%B %d, %Y')}"
+                )
+
+            # Time
+            if original_time != edited_record.time:
+                old_time = (
+                    original_time.strftime('%I:%M %p')
+                    if original_time
+                    else 'No time'
+                )
+
+                new_time = (
+                    edited_record.time.strftime('%I:%M %p')
+                    if edited_record.time
+                    else 'No time'
+                )
+
+                changes.append(
+                    f"Changed time from {old_time} to {new_time}"
+                )
+
+            # Handle the photo clear checkbox.
+            photo_cleared = (
+                form.cleaned_data.get('photo') is False
             )
 
+            if photo_cleared:
+                if edited_record.photo:
+                    edited_record.photo.delete(save=False)
+
+                edited_record.photo = None
+
+            edited_record.alert_level, _ = get_level_action(
+                edited_record.amount,
+                "daily"
+            )
+
+            # Determine what happened to the photo.
+            new_photo = (
+                edited_record.photo.name
+                if edited_record.photo
+                else None
+            )
+
+            if photo_cleared and original_photo:
+                changes.append("Removed the photo")
+
+            elif original_photo is None and new_photo:
+                changes.append("Added a photo")
+
+            elif (
+                original_photo
+                and new_photo
+                and original_photo != new_photo
+            ):
+                changes.append("Replaced the photo")
+
+            edited_record.save()
+
+            # Only create an audit entry when an actual change occurred.
+            if changes:
+                AuditLog.objects.create(
+                    performed_by=request.user,
+                    action='Edited Waste Record',
+                    target=edited_record.area.area_name,
+                    details='; '.join(changes),
+                    waste_record=edited_record,
+                    waste_record_id_snapshot=f'WR-{edited_record.id:03d}',
+                )
+
             return redirect('waste_list')
+
     else:
         form = EditWasteForm(instance=record)
 
-    return render(request, 'edit.html', {'form': form})
+    return render(
+        request,
+        'edit.html',
+        {'form': form}
+    )
 
 
 @login_required
 @janitor_required
 def delete_record(request, pk):
-    record = get_object_or_404(WasteRecord, id=pk, user=request.user)
+    record = get_object_or_404(
+        WasteRecord,
+        id=pk,
+        user=request.user
+    )
 
-    # Describe the record while it still exists.
+    # Capture the latest version of the record
+    # immediately before deletion.
     area_name = record.area.area_name
     details = describe_waste_record(record)
-
-    record.delete()
 
     AuditLog.objects.create(
         performed_by=request.user,
         action='Deleted Waste Record',
         target=area_name,
         details=details,
+        waste_record=record,
+        waste_record_id_snapshot=f'WR-{record.id:03d}',
     )
+
+    record.delete()
 
     return redirect('waste_list')
 
@@ -733,7 +927,6 @@ def waste_graphs(request):
         )
 
     records = waste_qs
-
 
     # BAR GRAPH
     area_totals = {}
@@ -824,9 +1017,23 @@ def waste_graphs(request):
         highest_building = 'N/A'
         highest_building_value = 0
 
-    critical_count = records.filter(
-        alert_level='Critical'
-    ).count()
+    # CRITICAL KPI
+    # Count areas that are Critical based on their
+    # aggregated waste total for the selected
+    # period, category, and area filter.
+    critical_count = 0
+
+    threshold_period = period if period != "all" else "yearly"
+
+    for area_name, area_data in area_totals.items():
+
+        level, _ = get_level_action(
+            area_data['total'],
+            threshold_period,
+        )
+
+        if level == 'Critical':
+            critical_count += 1
 
     # LINE GRAPH
     line_qs = WasteRecord.objects.all()
@@ -861,7 +1068,12 @@ def waste_graphs(request):
 
     import json
     from .models import Area
-    area_choices = Area.objects.values_list('area_name', flat=True)
+
+    area_choices = Area.objects.values_list(
+        'area_name',
+        flat=True
+    )
+
     return render(request, 'graphs.html', {
         'labels': json.dumps(labels),
         'totals': json.dumps(totals),
@@ -883,14 +1095,13 @@ def waste_graphs(request):
         'line_title': line_title,
         'line_labels': json.dumps(line_labels),
         'line_data': json.dumps(line_data),
-        'area_choices': Area.objects.values_list('area_name', flat=True),
+        'area_choices': area_choices,
         'selected_area': selected_area,
         'level_legend': build_level_legend(
             GRAPH_LEVEL_COLORS,
             period,
         ),
     })
-
 
 @login_required
 def building_status(request):
@@ -1184,20 +1395,66 @@ def audit_log(request):
 
     return render(request, 'audit_log.html', {
         'audit_entries': build_audit_entries(AuditLog.SUPERVISOR_ACTIONS),
+        'tracked_role': 'Supervisor',
+        'target_label': 'Target',
+        'show_content': True,
     })
 
-
 @login_required
-def janitor_audit_log(request):
-    """Supervisor's view of what the Lead Janitors have been doing."""
-
+def spv_audit_log(request):
     if request.user.profile.role != 'Supervisor':
         return redirect('waste_list')
 
-    return render(request, 'janitor_audit_log.html', {
-        'audit_entries': build_audit_entries(AuditLog.JANITOR_ACTIONS),
-    })
+    manila_tz = ZoneInfo('Asia/Manila')
 
+    audit_entries = (
+        AuditLog.objects
+        .filter(
+            action__in=AuditLog.JANITOR_ACTIONS
+        )
+        .select_related(
+            'performed_by',
+            'waste_record'
+        )
+    )
+
+    for log in audit_entries:
+        log.displayed_at = timezone.localtime(
+            log.created_at,
+            manila_tz
+        )
+
+        log.displayed_at_formatted = log.displayed_at.strftime(
+            "%b %d, %Y %I:%M %p"
+        )
+
+        if log.waste_record_id_snapshot:
+            log.waste_record_display = (
+                log.waste_record_id_snapshot
+            )
+
+        elif log.waste_record:
+            # Fallback for audit entries created before
+            # the permanent ID snapshot was added.
+            log.waste_record_display = (
+                f"WR-{log.waste_record.id:03d}"
+            )
+
+        elif log.action == 'Deleted Waste Record':
+            log.waste_record_display = "Record Deleted"
+
+        else:
+            # Older audit entries may not have a linked
+            # WasteRecord because the relationship was added later.
+            log.waste_record_display = "Unavailable"
+
+    return render(
+        request,
+        'janitor_audit_log.html',
+        {
+            'audit_entries': audit_entries,
+        }
+    )
 
 @csrf_protect
 def login_view(request):
@@ -1274,7 +1531,9 @@ def college_waste_summary(area_name, period='7days'):
     """Waste summary + current level for a college/area, used by the
     Message College Dean page. `period` selects the timeframe:
     '7days' (last 7 days) or 'month' (last 30 days)."""
+
     today = date.today()
+
     if period == "month":
         days = 30
         period_label = "Last 30 Days"
@@ -1284,6 +1543,7 @@ def college_waste_summary(area_name, period='7days'):
         days = 7
         period_label = "Last 7 Days"
         reporting_period = "weekly"
+
     start = today - timedelta(days=days - 1)
 
     qs = WasteRecord.objects.filter(
@@ -1293,17 +1553,29 @@ def college_waste_summary(area_name, period='7days'):
     )
 
     reports_submitted = qs.count()
-    period_total = qs.aggregate(total=Sum('amount'))['total'] or 0
+
+    period_total = qs.aggregate(
+        total=Sum('amount')
+    )['total'] or 0
+
     average_daily = period_total / days
 
     # Classify each day's total into an alert level.
     day_totals = {}
+
     for record in qs:
-        day_totals[record.date] = day_totals.get(record.date, 0) + record.amount
+        day_totals[record.date] = (
+            day_totals.get(record.date, 0) + record.amount
+        )
 
     critical_days = high_days = moderate_days = low_days = 0
+
     for total in day_totals.values():
-        level, _ = get_level_action(total, reporting_period,)
+        level, _ = get_level_action(
+            total,
+            reporting_period
+        )
+
         if level == 'Critical':
             critical_days += 1
         elif level == 'High':
@@ -1313,7 +1585,12 @@ def college_waste_summary(area_name, period='7days'):
         else:
             low_days += 1
 
-    current_level, current_desc = get_level_action(average_daily, reporting_period,)
+    # The current level is based on the TOTAL waste
+    # accumulated during the selected monitoring period.
+    current_level, current_desc = get_level_action(
+        period_total,
+        reporting_period
+    )
 
     return {
         'reports_submitted': reports_submitted,

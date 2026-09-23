@@ -89,7 +89,7 @@
             <span class="nav-label">Messages</span>
             {% if critical_college_count %}<span class="nav-badge">{{ critical_college_count }}</span>{% else %}<span class="nav-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>{% endif %}
         </a>
-        <a href="{% url 'janitor_audit_log' %}"{% if active == 'audit_log' %} class="active"{% endif %}>
+        <a href="{% url 'spv_audit_log' %}"{% if active == 'audit_log' %} class="active"{% endif %}>
             <span class="nav-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span>
             <span class="nav-label">Audit Log</span>
             <span class="nav-chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>

@@ -208,6 +208,20 @@ class AuditLog(models.Model):
         blank=True
     )
 
+    waste_record = models.ForeignKey(
+        'WasteRecord',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='audit_logs'
+    )
+
+    waste_record_id_snapshot = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True
     )
@@ -216,5 +230,13 @@ class AuditLog(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        username = self.performed_by.username if self.performed_by else 'Deleted User'
-        return f"{username} - {self.action} - {self.created_at}"
+        username = (
+            self.performed_by.username
+            if self.performed_by
+            else 'Deleted User'
+        )
+
+        return (
+            f"{username} - {self.action} - "
+            f"{self.created_at}"
+        )

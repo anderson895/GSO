@@ -347,14 +347,18 @@
 
     <div class="layout">
 
-        {% include 'partials/admin_sidebar.html' with active='audit_log' %}
+        {% if request.user.profile.role == 'Head Supervisor' %}
+            {% include 'partials/admin_sidebar.html' with active='audit_log' %}
+        {% else %}
+            {% include 'partials/staff_sidebar.html' with active='audit_log' %}
+        {% endif %}
 
         <main class="main">
 
             <div class="page-header">
                 <div>
                     <h1>Audit Log</h1>
-                    <p>Track Supervisor activities within the system.</p>
+                    <p>Track {{ tracked_role }} activities within the system.</p>
                 </div>
             </div>
 
@@ -381,9 +385,11 @@
                                     <th>Date &amp; Time</th>
                                     <th>Performed By</th>
                                     <th>Action</th>
-                                    <th>Target</th>
+                                    <th>{{ target_label }}</th>
                                     <th>Details</th>
-                                    <th>Content</th>
+                                    {% if show_content %}
+                                        <th>Content</th>
+                                    {% endif %}
                                 </tr>
                             </thead>
 
@@ -420,13 +426,15 @@
                                                 N/A
                                             {% endif %}
                                         </td>
-                                        <td class="details-text">
-                                            {% if log.content %}
-                                                {{ log.content }}
-                                            {% else %}
-                                                —
-                                            {% endif %}
-                                        </td>
+                                        {% if show_content %}
+                                            <td class="details-text">
+                                                {% if log.content %}
+                                                    {{ log.content }}
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </td>
+                                        {% endif %}
 
                                     </tr>
 
@@ -459,7 +467,7 @@
                         </div>
 
                         <h3>No Audit Records Yet</h3>
-                        <p>Supervisor activities will appear here.</p>
+                        <p>{{ tracked_role }} activities will appear here.</p>
 
                     </div>
 

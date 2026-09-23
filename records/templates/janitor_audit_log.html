@@ -161,7 +161,7 @@
 
         .audit-table {
             width: 100%;
-            min-width: 780px;
+            min-width: 1050px;
             border-collapse: collapse;
         }
 
@@ -201,6 +201,12 @@
             white-space: nowrap;
         }
 
+        .record-id {
+            color: #17612b;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
         .user-name {
             color: #17612b;
             font-weight: 700;
@@ -213,7 +219,7 @@
             min-width: 210px;
         }
 
-        .area-name {
+        .target-name {
             color: #39483e;
             font-weight: 600;
             white-space: nowrap;
@@ -222,7 +228,7 @@
         .details-text {
             color: #68766d;
             line-height: 1.5;
-            min-width: 240px;
+            min-width: 280px;
         }
 
         .empty-state {
@@ -347,7 +353,11 @@
 
     <div class="layout">
 
-        {% include 'partials/staff_sidebar.html' with active='audit_log' %}
+        {% if request.user.profile.role == 'Head Supervisor' %}
+            {% include 'partials/admin_sidebar.html' with active='audit_log' %}
+        {% else %}
+            {% include 'partials/staff_sidebar.html' with active='audit_log' %}
+        {% endif %}
 
         <main class="main">
 
@@ -379,9 +389,10 @@
                             <thead>
                                 <tr>
                                     <th>Date &amp; Time</th>
+                                    <th>Waste Record ID</th>
                                     <th>Performed By</th>
                                     <th>Action</th>
-                                    <th>Assigned Area</th>
+                                    <th>Target / Area</th>
                                     <th>Details</th>
                                 </tr>
                             </thead>
@@ -396,6 +407,10 @@
                                             {{ log.displayed_at_formatted }}
                                         </td>
 
+                                        <td class="record-id">
+                                            {{ log.waste_record_display }}
+                                        </td>
+
                                         <td class="user-name">
                                             {% if log.performed_by %}
                                                 {{ log.performed_by.username }}
@@ -408,7 +423,7 @@
                                             {{ log.action }}
                                         </td>
 
-                                        <td class="area-name">
+                                        <td class="target-name">
                                             {{ log.target }}
                                         </td>
 

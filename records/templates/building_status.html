@@ -344,7 +344,6 @@
                     <span><strong>Area:</strong> {{ report.area }}</span>
                     <span><strong>Type:</strong> {{ report.waste_type }}</span>
                     <span><strong>Amount:</strong> {{ report.amount|floatformat:0 }}</span>
-                    <span><strong>Alert:</strong> <span class="status-label {{ report.alert_level|lower }}">{{ report.alert_level }}</span></span>
                     <span><strong>Lead Janitor:</strong> {{ report.janitor }}</span>
                     <span><strong>Submitted:</strong> {{ report.submitted_at|date:'M d, Y H:i' }}</span>
                 </div>

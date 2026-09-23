@@ -47,7 +47,7 @@
         .profile-btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px 22px; border-radius: 20px; background: var(--primary); color: white; text-decoration: none; font-weight: 700; box-shadow: var(--shadow); transition: transform 0.2s ease, background 0.2s ease; }
         .profile-btn:hover { transform: translateY(-1px); background: #0d7b3b; }
 
-        .cards{ display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:18px; }
+        .cards{display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:18px; margin-bottom:24px;}
         .card, .change-card { position: relative; background: var(--panel); border-radius: 18px; padding: 22px 24px 24px; box-shadow: var(--shadow); border: 1px solid rgba(20, 152, 79, 0.10); overflow: hidden; }
         .card::after, .change-card::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 4px; background: #2e8b3d; }
         .card.accent-orange::after, .change-card.accent-orange::after { background: #e97b00; }
@@ -77,6 +77,144 @@
         td select:hover { border-color: #b7d3bd; }
         td select:focus { outline: none; border-color: #2e8b3d; box-shadow: 0 0 0 3px rgba(46, 139, 61, 0.12); }
         .form-card button { width: fit-content; }
+        .photo-upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .photo-upload-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .photo-upload-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px;
+            border: 2px dashed #c9dcca;
+            border-radius: 14px;
+            background: #f8fcf9;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .photo-upload-box:hover {
+            border-color: #2e8b3d;
+            background: #f2faf4;
+        }
+
+        .photo-upload-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: #e8f5ec;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .photo-upload-content {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .photo-upload-content strong {
+            color: #243329;
+            font-size: 0.98rem;
+        }
+
+        .photo-upload-content span {
+            color: #6f7d73;
+            font-size: 0.85rem;
+        }
+
+        .photo-upload-button {
+            width: fit-content;
+            margin-top: 6px;
+            padding: 9px 14px;
+            border-radius: 9px;
+            background: #2e8b3d;
+            color: white !important;
+            font-size: 0.85rem !important;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .photo-upload-button:hover {
+            background: #246f31;
+        }
+
+        .photo-file-name {
+            font-size: 0.8rem !important;
+            color: #7b877e !important;
+        }
+
+        .photo-upload-box input[type="file"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .quick-field-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .date-time-row {
+            display: flex;
+            gap: 100px;
+            align-items: flex-start;
+        }
+
+        .date-time-field {
+            flex: 0 0 auto;
+        }
+
+        .date-time-field .quick-field-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        @media (max-width: 700px) {
+            .date-time-row {
+                flex-direction: column;
+                gap: 18px;
+            }
+        }
+
+        .quick-field-row input {
+            flex: 0 0 150px;
+            width: 150px;
+        }
+
+        .quick-date-btn {
+            width: auto !important;
+            flex-shrink: 0;
+            padding: 12px 16px;
+            border: 1px solid #b7d3bd;
+            border-radius: 10px;
+            background: #e8f5ec;
+            color: #17612b;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .quick-date-btn:hover {
+            background: #2e8b3d;
+            color: white;
+        }
 
         .table-wrapper { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 780px; }
@@ -314,34 +452,6 @@
                     </div>
                 </div>
 
-                {% if request.user.profile.role == "Lead Janitor" %}
-                <div class="card">
-                    <div class="card-top">
-                        <span class="card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-3"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></span>
-                        <h3>Waste Thresholds</h3>
-                    </div>
-
-                    <p class="note">
-                        <strong>Low:</strong>
-                        0 - {{ threshold.low_max }}
-                        <br>
-
-                        <strong>Moderate:</strong>
-                        {{ threshold.low_max }} -
-                        {{ threshold.moderate_max }}
-                        <br>
-
-                        <strong>High:</strong>
-                        {{ threshold.moderate_max }} -
-                        {{ threshold.high_max }}
-                        <br>
-
-                        <strong>Critical:</strong>
-                        {{ threshold.high_max }}+
-                    </p>
-                </div>
-                {% endif %}
-
             </div>
 
             <div class="container">
@@ -354,7 +464,109 @@
                     <div class="form-card">
                         <form method="POST" enctype="multipart/form-data">
                             {% csrf_token %}
-                            {{ form.as_p }}
+
+                            <div>
+                                {{ form.area.label_tag }}
+                                {{ form.area }}
+                                {% if form.area.errors %}
+                                    {{ form.area.errors }}
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                {{ form.waste_type.label_tag }}
+                                {{ form.waste_type }}
+                                {% if form.waste_type.errors %}
+                                    {{ form.waste_type.errors }}
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                {{ form.amount.label_tag }}
+                                {{ form.amount }}
+                                {% if form.amount.errors %}
+                                    {{ form.amount.errors }}
+                                {% endif %}
+                            </div>
+
+                            <div class="date-time-row">
+
+                                <div class="date-time-field">
+                                    {{ form.date.label_tag }}
+
+                                    <div class="quick-field-row">
+                                        {{ form.date }}
+
+                                        <button
+                                            type="button"
+                                            class="quick-date-btn"
+                                            onclick="setToday()"
+                                        >
+                                            Today
+                                        </button>
+                                    </div>
+
+                                    {% if form.date.errors %}
+                                        {{ form.date.errors }}
+                                    {% endif %}
+                                </div>
+
+
+                                <div class="date-time-field">
+                                    {{ form.time.label_tag }}
+
+                                    <div class="quick-field-row">
+                                        {{ form.time }}
+
+                                        <button
+                                            type="button"
+                                            class="quick-date-btn"
+                                            onclick="setCurrentTime()"
+                                        >
+                                            Current Time
+                                        </button>
+                                    </div>
+
+                                    {% if form.time.errors %}
+                                        {{ form.time.errors }}
+                                    {% endif %}
+                                </div>
+
+                            </div>
+
+                            <div class="photo-upload-section">
+                                <label class="photo-upload-label">
+                                    Upload Photo
+                                </label>
+
+                                <div class="photo-upload-box">
+                                    <div class="photo-upload-icon">
+                                        📷
+                                    </div>
+
+                                    <div class="photo-upload-content">
+                                        <strong>Upload Waste Photo</strong>
+                                        <span>
+                                            Add a photo as evidence of the recorded waste.
+                                        </span>
+
+                                        <label for="id_photo" class="photo-upload-button">
+                                            Choose Photo
+                                        </label>
+
+                                        <span id="photo-file-name" class="photo-file-name">
+                                            No photo selected
+                                        </span>
+                                    </div>
+
+                                    {{ form.photo }}
+                                </div>
+
+                                {% if form.photo.errors %}
+                                    {{ form.photo.errors }}
+                                {% endif %}
+                            </div>
+
                             <button type="submit" class="add-btn">Submit Report</button>
                         </form>
                     </div>
@@ -367,25 +579,17 @@
                         <h2>Recent Waste Records</h2>
 
                     </div>
-                    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:14px 18px; background:#f7fbf6; border:1px solid rgba(20,152,79,0.14); border-radius:14px; padding:12px 18px; margin-bottom:20px;">
-                        <strong style="font-size:0.76rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted);">Alert Levels:</strong>
-                        {% for item in level_legend %}
-                        <span style="display:inline-flex; align-items:center; gap:7px; font-size:0.84rem; font-weight:600; color:var(--text);">
-                            <span style="width:14px; height:14px; border-radius:4px; background:{{ item.color }};"></span>
-                            {{ item.level }} <span style="color:var(--muted); font-weight:500;">({{ item.range }})</span>
-                        </span>
-                        {% endfor %}
-                    </div>
+
                     <div class="table-wrapper">
                         <table>
                             <thead>
                                 <tr>
+                                    <th>Waste Record ID</th>
                                     <th>Area</th>
                                     <th>Date</th>
                                     <th>Time</th>
                                     <th>Type</th>
                                     <th>Number of Bags</th>
-                                    <th>Alert</th>
                                     <th>Rating</th>
                                     <th>Remarks</th>
                                     <th>Actions</th>
@@ -394,12 +598,12 @@
                             <tbody>
                                 {% for d in data %}
                                 <tr>
+                                    <td data-label="Waste Record ID"><strong>{{ d.waste_record_id }}</strong></td>
                                     <td data-label="Area"><strong>{{ d.area }}</strong></td>
                                     <td data-label="Date">{{ d.date }}</td>
                                     <td data-label="Time">{{ d.time }}</td>
                                     <td data-label="Type">{{ d.waste_type }}</td>
                                     <td data-label="Number of Bags">{{ d.amount|floatformat:0 }}</td>
-                                    <td data-label="Alert"><span class="status-pill status-{{ d.alert_level|lower }}">{{ d.alert_level }}</span></td>
                                     <td data-label="Rating">{% if d.coordinator_rating %}{{ d.coordinator_rating }} / 5{% else %}-{% endif %}</td>
                                     <td data-label="Remarks">{% if d.coordinator_comment %}{{ d.coordinator_comment }}{% else %}-{% endif %}</td>
                                     <td data-label="Actions" class="action-links">
@@ -503,6 +707,50 @@
 
             setMobileSidebar(false);
         });
+    </script>
+
+    <script>
+        function setToday() {
+            const dateField = document.getElementById('id_date');
+
+            if (!dateField) return;
+
+            const today = new Date();
+
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+
+            dateField.value = `${year}-${month}-${day}`;
+        }
+
+        function setCurrentTime() {
+            const timeField = document.getElementById('id_time');
+
+            if (!timeField) return;
+
+            const now = new Date();
+
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+
+            timeField.value = `${hours}:${minutes}`;
+        }
+
+        const photoInput = document.getElementById('id_photo');
+        const photoFileName = document.getElementById('photo-file-name');
+
+        if (photoInput && photoFileName) {
+            photoInput.addEventListener('change', function() {
+                if (photoInput.files.length > 0) {
+                    photoFileName.textContent =
+                        photoInput.files[0].name;
+                } else {
+                    photoFileName.textContent =
+                        'No photo selected';
+                }
+            });
+        }
     </script>
 </body>
 </html>

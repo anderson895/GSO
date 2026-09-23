@@ -28,7 +28,11 @@
             font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: var(--ink);
             min-height: 100vh;
+            /* dvh tracks the mobile address bar; ignored where unsupported. */
+            min-height: 100dvh;
             background: #ffffff;
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
         }
 
         /* ---------- SCENE (full-bleed, decorations live here) ---------- */
@@ -36,6 +40,7 @@
             position: relative;
             width: 100%;
             min-height: 100vh;
+            min-height: 100dvh;
             background: #ffffff;
             overflow: hidden;
             display: grid;
@@ -375,50 +380,61 @@
         .btn-dean svg { color: var(--green); }
 
         /* ---------- RESPONSIVE ---------- */
+        /* Stacked layout. The two columns become one, so the photo can no longer
+           act as a backdrop for the branding -- pinned bottom-left at 66% it cut
+           off mid-screen and showed through beside the buttons. Below, the photo,
+           wave and bin regroup into a full-bleed footer under the form, which
+           keeps the desktop motif without anything sitting behind the controls. */
         @media (max-width: 900px) {
             .login-card {
                 grid-template-columns: 1fr;
-                min-height: 100vh;
-                /* Rows must hug their content -- stretching them to fill a tall
-                   viewport tears a gap between the branding and the form. */
-                align-content: start;
+                /* Reserves the footer band the decorations are anchored to. */
+                padding-bottom: 200px;
             }
 
-            /* Type scales with the screen so the wordmark keeps to one line
-               instead of breaking after "General Services". */
-            .brand-panel { padding: 46px 24px 28px; }
-            .brand-logo { width: clamp(96px, 26vw, 132px); margin-bottom: 10px; }
-            .brand-uni { font-size: clamp(14px, 4.2vw, 18px); }
-            .brand-office { font-size: clamp(20px, 6.4vw, 30px); }
-            .brand-system { font-size: clamp(15px, 4.6vw, 20px); }
-            .brand-rule { width: 130px; margin: 16px 0; }
-            .brand-sprout { width: 38px; margin-bottom: 12px; }
-            .brand-tagline { font-size: clamp(14px, 4vw, 16px); line-height: 1.6; }
+            /* Branding and form share one gutter so the two blocks line up. */
+            .brand-panel { padding: 52px 28px 36px; }
+            .form-side { padding: 0 28px 40px; }
 
-            /* The photo is cropped for a wide desktop panel. Stacked on a phone
-               it lands under the form as a block with a hard right edge, so run
-               it full width and dial it back to a watermark. */
-            .deco-building {
-                width: 100%;
-                height: 42%;
-                opacity: 0.18;
-            }
+            .brand-logo { width: 120px; height: 120px; }
+            .brand-uni { font-size: 17px; }
+            .brand-office { font-size: 28px; }
+            .brand-system { font-size: 19px; }
+            .brand-rule { width: 140px; margin: 18px 0; }
+            .brand-tagline { font-size: 16px; }
 
-            .deco-curve, .deco-bin { display: none; }
-
-            .form-side { padding: 0 24px 44px; }
             .form-card { box-shadow: none; max-width: 520px; padding: 0; }
-            .welcome { font-size: clamp(26px, 7.6vw, 34px); }
-            .welcome-sub { font-size: 15px; margin-bottom: 26px; }
+            .welcome { font-size: 32px; }
+            .welcome-sub { margin-bottom: 28px; }
+            /* 16px stops iOS Safari zooming the page in when a field is focused. */
+            .input-wrap input { font-size: 16px; }
+
+            .deco-building {
+                /* Full width, so the asset's own right-edge fade reaches the
+                   screen edge instead of cutting off hard at 66% mid-page. */
+                width: 100%;
+                height: 200px;
+                opacity: 0.5;
+                object-position: center bottom;
+                -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 58%);
+                mask-image: linear-gradient(to bottom, transparent 0%, #000 58%);
+            }
+            .deco-curve { height: 130px; }
+            .deco-bin { right: 14px; bottom: 10px; width: 96px; }
         }
 
         @media (max-width: 480px) {
-            /* Full bleed -- the old 12px body inset only ate usable width. */
-            .brand-panel { padding: 38px 20px 24px; }
-            .deco-leaves { width: 150px; max-width: 40%; }
-            .form-side { padding: 0 20px 36px; }
-            .field { margin-bottom: 20px; }
-            .form-row { margin: 4px 0 24px; }
+            .login-card { padding-bottom: 168px; }
+            .brand-panel { padding: 40px 20px 28px; }
+            .form-side { padding: 0 20px 34px; }
+            .brand-logo { width: 104px; height: 104px; }
+            .brand-office { font-size: 25px; }
+            .brand-system { font-size: 18px; }
+            .welcome { font-size: 28px; }
+            .deco-leaves { width: 150px; max-width: 34%; }
+            .deco-building { height: 168px; }
+            .deco-curve { height: 104px; }
+            .deco-bin { right: 10px; width: 76px; }
         }
     </style>
 </head>
